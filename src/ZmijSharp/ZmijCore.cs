@@ -52,6 +52,9 @@ internal static partial class ZmijCore
         {
             significand = dec.Significand * 10 + (uint)dec.LastDigit;
             resultExponent = dec.Exponent;
+            // A nonzero final digit proves the result is already canonical.
+            if (dec.LastDigit != 0)
+                return new ZmijDecimal(significand, resultExponent, negative, normalize: false);
         }
         else
         {
