@@ -1,5 +1,7 @@
 # Stacked cache decomposition ShortRuns
 
+These measurements were made at revision `72c370e`, before the normal-power-of-two scaling change.
+
 Windows x64, .NET SDK `11.0.100-rc.1.26425.128`, Release `net11.0`, BenchmarkDotNet 0.14.0 ShortRun. These are separate compact and full launches on the same machine, with the pinned #131068 local canonical producer measured in each launch. Each operation converts one of 10,000 precomputed values to a canonical `(significand, exponent)` tuple; digit writing and presentation are excluded. Values are ns/operation, with three measured iterations per benchmark.
 
 | Workload | Current Zmij compact | #131068 control in compact launch | Current Zmij full | #131068 control in full launch |

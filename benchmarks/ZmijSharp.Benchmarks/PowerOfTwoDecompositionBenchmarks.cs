@@ -7,6 +7,7 @@ using UnroundedCore = UnroundedScaling.Comparison.UnroundedScaling;
 public class PowerOfTwoDecompositionBenchmarks
 {
     private readonly double[] _values = new double[10_000];
+    private readonly float[] _floatValues = new float[10_000];
 
     [GlobalSetup]
     public void Setup()
@@ -21,6 +22,9 @@ public class PowerOfTwoDecompositionBenchmarks
             (ulong significand, int decimalExponent) = UnroundedCore.GetCanonicalShortest(value);
             if (zmij.Significand != significand || zmij.Exponent != decimalExponent)
                 throw new InvalidOperationException($"Power-of-two decomposition differs for exponent {exponent}.");
+
+            int floatExponent = 1 + i % 254;
+            _floatValues[i] = BitConverter.Int32BitsToSingle(floatExponent << 23);
         }
     }
 
@@ -44,6 +48,18 @@ public class PowerOfTwoDecompositionBenchmarks
         {
             (ulong significand, int exponent) = UnroundedCore.GetCanonicalShortest(value);
             checksum += significand + (uint)exponent;
+        }
+        return checksum;
+    }
+
+    [Benchmark(OperationsPerInvoke = 10_000)]
+    public ulong ZmijFloatCanonical()
+    {
+        ulong checksum = 0;
+        foreach (float value in _floatValues)
+        {
+            ZmijDecimal result = ZmijCore.ToDecimal(value);
+            checksum += result.Significand + (uint)result.Exponent;
         }
         return checksum;
     }

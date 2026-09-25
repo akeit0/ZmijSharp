@@ -45,12 +45,12 @@ The same Zmij minimal project can source-link either cache, with the same finite
 |---|---:|---:|
 | Cached-power source constants | 830 B | 9,888 B |
 | Minimal `Shortest.Core.dll` | 12,288 B | 20,480 B |
-| JIT `ToDecimal(ulong, int, bool)` | 1,005 B | 631 B |
-| Listed shortest call tree | 1,773 B | 1,399 B |
+| JIT `ToDecimal(ulong, int, bool)` | 974 B | 610 B |
+| Listed shortest call tree | 1,742 B | 1,378 B |
 
 The [earlier alternating decomposition ShortRuns](benchmark-sessions/cache-profiles-decomposition.md) used the former stride-28 cache: full took **6.118–6.148 ns/value** for varied long significands and **7.460–7.561 ns/value** for random bits; compact took **8.924** and **11.502 ns/value**. These timings are historical; [current-profile ShortRuns](benchmark-sessions/stacked-cache-short.md) are recorded separately. The current full table saves reconstruction work but adds **9,058 source-data bytes** and **8,192 B** to the minimal DLL. The measurements cover local canonical decomposition, not a separately timed cache lookup or a CoreLib build.
 
-On the regular path, the compact cache splits the power index into a 16-entry block, reads a minor and two anchor words, performs two 64-bit products, then normalizes and corrects the reconstructed pair. The full profile reads the pair directly. After either lookup, the converter still performs two 64-bit products for scaling and one for the extra digit, followed by rounding and the entry point's trailing-decimal-zero loop. The benchmark difference identifies the cache choice as a substantial cost in this implementation; it does not assign an exact nanosecond count to each operation.
+On the regular path, the compact cache splits the power index into a 16-entry block, reads a minor and two anchor words, performs two 64-bit products, then normalizes and corrects the reconstructed pair. The full profile reads the pair directly. After either lookup, regular conversion performs two 64-bit products for scaling and one for the extra digit, followed by rounding and the entry point's trailing-decimal-zero loop. For normal powers of two, scaling uses shifts instead of the two products. The benchmark difference identifies the cache choice as a substantial cost in this implementation; it does not assign an exact nanosecond count to each operation.
 
 Rebuild and check the full minimal profile with `dotnet build -c Release tools/ShortestCoreSize/ShortestCoreSize.csproj -t:Rebuild -p:ShortestCore=Zmij -p:ZmijCache=Full`, then `dotnet run -c Release --project tools/ShortestCoreSize.Check -p:ShortestCore=Zmij -p:ZmijCache=Full`. Omit `-p:ZmijCache=Full` to return to the compact profile.
 
@@ -62,9 +62,9 @@ The check program also drives x64 RyuJIT `FullOpts` with tiering disabled. The p
 |---|---:|---:|
 | Public adapter | 171 B | 246 B |
 | Decode input | `ToDecimal(double)` 298 B | `ExtractFractionAndBiasedExponent` 64 B |
-| Shortest conversion | `ToDecimal(ulong, int, bool)` 1,005 B | `ShortFloat` 708 B |
+| Shortest conversion | `ToDecimal(ulong, int, bool)` 974 B | `ShortFloat` 708 B |
 | Digit writing | `TryGetSignificantDigits(ZmijDecimal, …)` 299 B | `StoreDigits` 373 B, including inlined CoreLib helpers |
-| **Listed call-tree total** | **1,773 B** | **1,391 B** |
+| **Listed call-tree total** | **1,742 B** | **1,391 B** |
 
 The compact Zmij path spends instructions reconstructing cached powers: it indexes 16 minors and 39 anchors, multiplies the words, normalizes the result, and applies one correction bit. The pinned unrounded-scaling port reads adjacent table words. Native code is larger for Zmij in this JIT run while its counted data and DLL are smaller. These method totals are observations from one architecture and JIT; they cannot be added to the DLL lengths or used as a ReadyToRun estimate.
 
