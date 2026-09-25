@@ -16,9 +16,9 @@ The compact cache reconstructs 618 cached powers. The same minimal, presentation
 |---|---:|---:|
 | Power-cache source constants | 670 B | 11,136 B |
 | Minimal Release `Shortest.Core.dll` | 11,776 B | 19,968 B |
-| Listed x64 JIT call tree | 2,087 B | 1,391 B |
+| Listed x64 JIT call tree | 1,868 B | 1,391 B |
 
-The #131068 [power table](https://github.com/dotnet/runtime/blob/56ff851680b3c64a9ecaf543225b9cc948fe0262/src/libraries/System.Private.CoreLib/src/System/Number.Pow10Table.cs) is shared across four types and bounded precision; the local DLL and JIT rows cover only its `double` shortest path. The DLL figures are PE file lengths, while the JIT figures are native instruction bytes. None is an incremental CoreLib size estimate. For separate context, Grisu3 has **1,084 bytes** across its four source tables at [`dotnet/runtime` `f0df4333`](https://github.com/dotnet/runtime/blob/f0df4333553c63a6bdba26228ab94b99e4a1c8d1/src/libraries/System.Private.CoreLib/src/System/Number.Grisu3.cs). See the size and assembly record linked below for the counted arrays and method list.
+The #131068 [power table](https://github.com/dotnet/runtime/blob/56ff851680b3c64a9ecaf543225b9cc948fe0262/src/libraries/System.Private.CoreLib/src/System/Number.Pow10Table.cs) is shared across four types and bounded precision; the local DLL and JIT rows cover only its `double` shortest path. The DLL figures are PE file lengths, while the JIT figures are native instruction bytes. None is an incremental CoreLib size estimate. The Zmij JIT row includes a [later entry-point reduction](optimization-notes.md). For separate context, Grisu3 has **1,084 bytes** across its four source tables at [`dotnet/runtime` `f0df4333`](https://github.com/dotnet/runtime/blob/f0df4333553c63a6bdba26228ab94b99e4a1c8d1/src/libraries/System.Private.CoreLib/src/System/Number.Grisu3.cs). See the size and assembly record linked below for the counted arrays and method list.
 
 ## Evidence available today
 
@@ -26,19 +26,15 @@ The #131068 [power table](https://github.com/dotnet/runtime/blob/56ff851680b3c64
 - A separate exact-integer shortest-decimal oracle passed sampled and exponent-boundary cases. A pinned upstream Żmij differential passed one million random patterns per type plus exponent boundaries after normalizing trailing-zero representation differences.
 - A matrix of four number-format providers, 14 format strings, and destination capacities passed against the installed runtime. This checks the standalone wrapper; it does not establish CoreLib integration behavior.
 
-Two Windows x64 ShortRun sessions measured complete `double` `TryFormat` into preallocated `Span<char>` buffers. Each range gives the two session means in nanoseconds per value over a deterministic 10,000-value corpus; lower is better. The #131068 column uses the local `double` port pinned to `56ff8516`. The local implementations share fixed/scientific presentation code but stage and write digits differently; the installed runtime uses its own formatter.
+Two later [component sessions](component-benchmarks.md) measured finite nonzero `double` decomposition without digit writing on Windows x64 with .NET 11 RC. Both local paths returned the same canonical `(significand, exponent)` on every input. Values below are the ranges of two ShortRun session means in ns/value over 10,000-value corpora; lower is better.
 
-| Corpus | Runtime | #131068 local port | Zmij |
-|---|---:|---:|---:|
-| Simple | 33.25–34.77 ns | 27.41–30.34 ns | 27.95–30.17 ns |
-| JsonLike | 30.36–30.61 ns | 28.08–28.68 ns | 29.93–30.10 ns |
-| Repeated 2^53−1 | 64.91–66.31 ns | 33.57–39.79 ns | 24.40–24.68 ns |
-| Random raw IEEE bits | 88.58–89.46 ns | 49.82–51.38 ns | 44.72–45.48 ns |
-| Extreme | 49.03–49.51 ns | 29.83–30.89 ns | 29.08–29.18 ns |
+| Corpus | Zmij canonical tuple | #131068 local canonical tuple |
+|---|---:|---:|
+| Simple | 19.45 | 14.99–15.19 |
+| Varied long significands | 8.99–9.05 | 6.76–6.81 |
+| Random raw IEEE bits | 11.59–11.81 | 8.51–9.11 |
 
-The #131068 port led on `JsonLike` in both sessions; Zmij led on raw-bit inputs and the repeated 2^53−1 case. The latter was labeled `LongSignificand` in the pinned reports, but a generator bug made all 10,000 values identical; it is a single-value stress case, not a varied corpus. The generator is fixed in the current repository. `Simple` changed order, and `Extreme` showed a small Zmij lead. Digits-only measurements favor the #131068 port on most corpora; those methods omit complete formatting and their zero handling differs. BenchmarkDotNet 0.14.0 ShortRun used the .NET 11 RC runtime on one Windows x64 machine, one launch per session, three warmup iterations, and three measured iterations. All rows recorded zero allocations. These standalone measurements do not predict a CoreLib result or represent an average application's value mix. The full methods, results, and raw sessions are linked below.
-
-A later [component experiment](https://github.com/akeit0/ZmijSharp/blob/main/docs/component-benchmarks.md) isolates finite nonzero `double` decomposition without digit writing. With both local paths returning the same canonical significand and exponent, the pinned #131068 specialization was faster: **8.51–9.11 ns/value versus 11.59–11.81** for Zmij on raw IEEE-bit inputs, and **6.76–6.81 versus 8.99–9.05** on corrected varied long significands. A pointer-backed versus span-backed digit-buffer probe was near parity. The comparison formatter's byte-to-`char` staging had a larger measured cost, so the complete `char` timing above cannot be attributed to the shortest algorithm alone. These are separate short diagnostic sessions, not additive stage timings.
+The local #131068 specialization was faster at this boundary. Its diagnostic canonical helper trims integer trailing zeros, whereas production `TryRun` trims written bytes; Zmij's entry point retains sign and exceptional-value handling. The buffer probe found pointer and span storage near parity, while byte-to-`char` staging in the local comparison wrapper had a larger measured cost. These component results do not predict relative performance in CoreLib; [methods, caveats, and raw summaries](component-benchmarks.md) are linked here.
 
 The output sweep establishes compatibility with one runtime version. Independent shortestness coverage is smaller. A runtime change would need matched CoreLib builds and a broader performance record.
 
@@ -46,7 +42,7 @@ The output sweep establishes compatibility with one runtime version. Independent
 
 [dotnet/runtime#131068](https://github.com/dotnet/runtime/pull/131068) proposes unrounded scaling for `Half`, `BFloat16`, `float`, and `double`, including bounded significant digits. At its September 25, 2026 draft head, it already has CoreLib integration and reports matched-runtime tests. Its four types share one cached-power table; the 16-bit types do not add another table. [Issue #134621](https://github.com/dotnet/runtime/issues/134621) proposes a Ryu-based shortest `double` replacement and reports matched CoreLib benchmarks. [Maintainer feedback there](https://github.com/dotnet/runtime/issues/134621#issuecomment-5823161017) asks for comparison against #131068 and raises algorithm-count, type-coverage, and broader-formatting concerns.
 
-This candidate covers shortest `float` and `double`; it does not yet provide `Half`, `BFloat16`, or bounded precision. The benchmark and size tables compare Zmij with a local `double` port of the pinned #131068 algorithm. They do not measure the PR's generic CoreLib implementation or its other types and formats. They also cannot rank Żmij against the Ryu prototype. The decision should compare matched CoreLib builds of current `main`, #131068, Ryu, and this candidate, or use #131068 as baseline if it lands first. Algorithm count and maintenance cost belong in that decision.
+This candidate covers shortest `float` and `double`; it does not yet provide `Half`, `BFloat16`, or bounded precision. The component and size tables compare Zmij with a local `double` port of the pinned #131068 algorithm. They do not measure the PR's generic CoreLib implementation or its other types and formats. They also cannot rank Żmij against the Ryu prototype. The decision should compare matched CoreLib builds of current `main`, #131068, Ryu, and this candidate, or use #131068 as baseline if it lands first. Algorithm count and maintenance cost belong in that decision.
 
 ## Feedback requested
 
@@ -57,4 +53,4 @@ This candidate covers shortest `float` and `double`; it does not yet provide `Ha
 
 ## Reproducible reference
 
-The [public ZmijSharp revision `b051752`](https://github.com/akeit0/ZmijSharp/tree/b051752a56215349ba47ead4aa64dd6b9a154102) contains the measured implementation, the [completed evidence record](https://github.com/akeit0/ZmijSharp/blob/b051752a56215349ba47ead4aa64dd6b9a154102/docs/evidence.md), the [benchmark method and results](https://github.com/akeit0/ZmijSharp/blob/b051752a56215349ba47ead4aa64dd6b9a154102/docs/benchmark-results.md), the [two raw benchmark sessions](https://github.com/akeit0/ZmijSharp/tree/b051752a56215349ba47ead4aa64dd6b9a154102/docs/benchmark-sessions), and the [size and assembly record](https://github.com/akeit0/ZmijSharp/blob/b051752a56215349ba47ead4aa64dd6b9a154102/docs/size-and-assembly.md). The evidence links point to an immutable revision.
+The [public ZmijSharp revision `e929052`](https://github.com/akeit0/ZmijSharp/tree/e92905250febc735d5e253b4260e23e14123e83b) contains the [component methods, measurements, and raw summaries](https://github.com/akeit0/ZmijSharp/blob/e92905250febc735d5e253b4260e23e14123e83b/docs/component-benchmarks.md). The [size and assembly record](https://github.com/akeit0/ZmijSharp/blob/b051752a56215349ba47ead4aa64dd6b9a154102/docs/size-and-assembly.md) is pinned to the original minimal-project measurement. These links point to immutable revisions.

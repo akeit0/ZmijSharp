@@ -10,7 +10,7 @@ The work overlaps with [dotnet/runtime#131068](https://github.com/dotnet/runtime
 |---|---|
 | [Proposal](docs/proposal.md) | The argument and questions intended for a `dotnet/runtime` issue |
 | [Completed evidence](docs/evidence.md) | Checks that ran, what they establish, and how to repeat them |
-| [Benchmark results](docs/benchmark-results.md) and [size analysis](docs/size-and-assembly.md) | Measurement details behind the proposal |
+| [Component benchmarks](docs/component-benchmarks.md) and [size analysis](docs/size-and-assembly.md) | Measurement details behind the proposal |
 | [Optimization notes](docs/optimization-notes.md) | Later digit-helper comparison and x64 JIT code-size experiment |
 | [Component benchmarks](docs/component-benchmarks.md) | Isolated decomposition, buffer-shape, and byte-to-char staging measurements |
 | [Work plan](docs/plan.md) | Remaining repository tasks, publication steps, and a possible runtime experiment |
@@ -22,7 +22,7 @@ The proposal describes **what to show**; the plan records **what to do next**. N
 | Project | Purpose |
 |---|---|
 | [`src/ZmijSharp`](src/ZmijSharp) | Shortest converter, compact cache, and standalone `char`/invariant UTF-8 formatter for `float` and `double` |
-| [`src/UnroundedScaling.Comparison`](src/UnroundedScaling.Comparison) | `double`-only port of #131068 at `56ff8516`, with the same local presentation code for complete-path comparisons |
+| [`src/UnroundedScaling.Comparison`](src/UnroundedScaling.Comparison) | `double`-only port of #131068 at `56ff8516`, with benchmark adapters for decomposition and digit storage |
 | [`src/ZmijSharp.RuntimeShim`](src/ZmijSharp.RuntimeShim) | Limited runtime-shaped `double`/UTF-8 path for measuring conversion and formatting costs |
 | [`tests/ZmijSharp.Tests`](tests/ZmijSharp.Tests) | TUnit behavior and destination-buffer tests |
 | [`tests/ZmijSharp.Verify`](tests/ZmijSharp.Verify) | Runtime differential checks, independent `BigInteger` oracle, and long producer sweeps |
@@ -35,11 +35,10 @@ The optimized path covers default formatting, `G/g`, `G0/g0`, and `R/r` (includi
 
 - All 2³² binary32 patterns passed default invariant `char` output comparison with the installed runtime. Sampled and structured inputs also pass an independent shortest-decimal oracle.
 - A deterministic 100-million-pattern `double` sample passed default `char` and UTF-8 output comparison. A pinned upstream Żmij differential passed on one million random patterns per type plus exponent boundaries after trailing-zero normalization.
-- In two local complete-path benchmark sessions at the pinned measured revision, Zmij led the #131068 `double` port on raw-bit inputs; the port led on JSON-like values. Simple values changed order between sessions. A row originally called `LongSignificand` repeated one value because of a generator bug; the [benchmark record](docs/benchmark-results.md) identifies it and the current generator is fixed. A later [x64 JIT experiment](docs/optimization-notes.md) reduced Zmij's native call tree without establishing a new throughput claim. These standalone results are not a comparison on identical CoreLib builds.
-- In later [component benchmarks](docs/component-benchmarks.md), the local #131068 port was faster at equal canonical decimal decomposition on corrected varied inputs. Pointer and span digit buffers were near parity; the local comparison formatter's byte-to-`char` staging cost more. The complete `char` result above therefore does not isolate the algorithm itself.
+- In [component benchmarks](docs/component-benchmarks.md), the local #131068 port was faster at equal canonical decimal decomposition on varied inputs. Pointer and span digit buffers were near parity. A later [x64 JIT experiment](docs/optimization-notes.md) reduced Zmij's native call tree without establishing a throughput gain.
 - ARM64, ReadyToRun, NativeAOT, and CoreLib integration have not been measured here.
 
-For exact commands and coverage, see [completed evidence](docs/evidence.md). For methods, environment, and numbers, see [benchmark results](docs/benchmark-results.md). The [work plan](docs/plan.md) tracks what is still needed.
+For exact commands and coverage, see [completed evidence](docs/evidence.md). For methods, environment, and numbers, see [component benchmarks](docs/component-benchmarks.md). The [work plan](docs/plan.md) tracks what is still needed.
 
 ## Build and run
 
@@ -65,7 +64,7 @@ Run the benchmarks with:
 dotnet run -c Release --project benchmarks/ZmijSharp.Benchmarks -- --job Short
 ```
 
-Benchmark methods include runtime, Zmij, comparison-port, and runtime-shim paths. Compare rows from the same session and the same scope (complete formatting or digits only). The [recorded results](docs/benchmark-results.md) explain each corpus and comparison.
+Benchmark methods include runtime, Zmij, comparison-port, and runtime-shim paths. The [component record](docs/component-benchmarks.md) documents the inputs, output contracts, and limits of the measurements used in the proposal.
 
 ## API example
 
