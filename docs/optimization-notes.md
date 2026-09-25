@@ -1,6 +1,6 @@
 # Digit-stage and x64 JIT experiment
 
-This experiment compares matching `ulong` digit-counting and ASCII digit-writing work in Zmij and the pinned #131068 local port. It also reduces duplicated normalization code in Zmij's `float` and `double` entry points. It does not replace the [complete formatting measurements](benchmark-results.md), which used repository revision `b051752a56215349ba47ead4aa64dd6b9a154102`. A later [component benchmark](component-benchmarks.md) isolates decimal decomposition and buffer staging with a corrected varied long-significand corpus.
+This experiment compares matching `ulong` digit-counting and ASCII digit-writing work in Zmij and the pinned #131068 local port. It also reduces duplicated normalization code in Zmij's `float` and `double` entry points. A later [component benchmark](component-benchmarks.md) isolates decimal decomposition and buffer staging with a corrected varied long-significand corpus. The [current benchmark summary](benchmark-results.md) reports the latest compact/full decomposition comparison; standalone `Span<char>` adapter timings are not used as shortest-producer evidence.
 
 ## Reference and decision
 

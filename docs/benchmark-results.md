@@ -1,57 +1,27 @@
 # Local benchmark results
 
-These are historical measurements of standalone assemblies on one Windows x64 machine, not matched `dotnet/runtime` builds. The complete `char` rows measure local wrappers with different digit-staging paths; **they do not establish relative shortest-producer performance and are not used as proposal evidence**. The workload sessions below ran on 2026-09-25 at [ZmijSharp revision `b051752`](https://github.com/akeit0/ZmijSharp/tree/b051752a56215349ba47ead4aa64dd6b9a154102), with a local `double` specialization of [#131068 PR head `56ff8516`](../src/UnroundedScaling.Comparison/SOURCE.md). Later Zmij entry-point refactoring is recorded separately in [optimization notes](optimization-notes.md). The local port uses the pinned PR's shortest algorithm and power table and byte-specializes its existing CoreLib digit helpers.
+## Current shortest-decomposition comparison
 
-## Environment and method
+This comparison uses the caller-side scaling source at [revision `1e600aa`](https://github.com/akeit0/ZmijSharp/tree/1e600aa1ddebcd65bea2fc2b34427b2f389756de). It measures canonical `(significand, exponent)` production for finite, nonzero `double` values. Digit writing and text presentation are excluded. The comparison port specializes [#131068 at `56ff8516`](../src/UnroundedScaling.Comparison/SOURCE.md) for `double`; these are standalone assemblies, not matched CoreLib builds.
 
-- Windows 11 x64 (build `10.0.26200.9457`), .NET SDK `11.0.100-rc.1.26425.128`, installed runtime reported by BenchmarkDotNet as `.NET 11.0.0 (11.0.26.42628)`, X64 RyuJIT AVX2. BenchmarkDotNet reported the processor as unknown.
-- BenchmarkDotNet 0.14.0, `--job Short`: one launch, three warmup and three measured iterations per session. `OperationsPerInvoke = 10_000` normalizes each batch to one value. Two separate sessions on the same code state are preserved as [session 1](benchmark-sessions/pr-56ff8516-short-1.md) and [session 2](benchmark-sessions/pr-56ff8516-short-2.md). Ranges below show the two session means, not a confidence interval.
-- Each session used the same deterministic 10,000-value corpora. Values are raw IEEE patterns for `Random`, cycling common values for `Simple` and `JsonLike`, or extremes. **The historical `LongSignificand` generator accidentally repeated the single value 2^53−1 10,000 times**: it ORed random mantissa bits into a mask whose mantissa was already all ones. The generator is fixed in the current [`WorkloadBenchmarks.cs`](../benchmarks/ZmijSharp.Benchmarks/WorkloadBenchmarks.cs), so rerunning that row no longer reproduces the pinned session. The PR port passed a separate 2,000,000-pattern and binary-exponent-boundary digits, round-trip, and formatted-output check before these runs.
-- Complete `TryFormat` rows format into preallocated `Span<char>` buffers. The two significant-digit rows only produce digits and scale. They are diagnostics and must not share a speed ratio with complete formatting.
-- Allocations measured zero for every row in both sessions. These two short sessions are directional and did not include an unchanged integer control; near-parity results need a stronger measurement before a performance claim.
+Windows 11 x64, .NET SDK `11.0.100-rc.1.26425.128`, .NET 11 RC X64 RyuJIT AVX2, BenchmarkDotNet 0.14.0 ShortRun. Each corpus contains 10,000 deterministic values. Each Żmij profile and its UnroundedScaling control ran in the same launch; compact and full were separate launches. Setup checked equal canonical tuples. Means are ns/value from three measured iterations after three warmups; lower is better. No managed allocations were reported.
 
-Reproduce a workload session:
+| Corpus | Żmij compact | UnroundedScaling, compact launch | Żmij full | UnroundedScaling, full launch |
+|---|---:|---:|---:|---:|
+| Simple values | 19.033 | 15.524 | 15.493 | 15.161 |
+| Varied long significands | 8.510 | 6.585 | 6.177 | 6.632 |
+| Random raw IEEE bits | 10.915 | 8.934 | 6.760 | 8.764 |
 
-```bash
-dotnet run -c Release --project benchmarks/ZmijSharp.Benchmarks -- --job Short --filter "*WorkloadBenchmarks*"
-```
+Compact Żmij was slower than the local port on these corpora. In one full-cache launch, Żmij was faster on varied long significands and random bits and close on simple values. The full cache adds 9,058 source-data bytes and 8,192 B to the minimal DLL versus compact. The [session record](benchmark-sessions/current-cache-comparison-short.md) has the input method and reproduction command; [size and assembly](size-and-assembly.md) keeps data, DLL, and native-code counts separate.
 
-## Complete shortest `double` formatting
+These measurements isolate local decomposition cost. They do not establish complete formatting speed or predict a CoreLib result. Earlier standalone `Span<char>` comparisons used different digit-staging paths, and their historical long-significand corpus repeated one value due to a generator error. Their timing rows are omitted from this current summary.
 
-All values and methods in each row use the same workload. The two local implementations share fixed/scientific presentation code but differ in decimal decomposition and digit writing; the installed runtime uses its own formatter. Values are ns per formatted value.
+## Other local experiments
 
-| Corpus | Runtime `TryFormat` | #131068 local `TryFormat` | Zmij `TryFormat` |
-|---|---:|---:|---:|
-| Simple | 33.25–34.77 ns | 27.41–30.34 ns | 27.95–30.17 ns |
-| JsonLike | 30.36–30.61 ns | 28.08–28.68 ns | 29.93–30.10 ns |
-| Repeated 2^53−1 (historical `LongSignificand`) | 64.91–66.31 ns | 33.57–39.79 ns | 24.40–24.68 ns |
-| Random | 88.58–89.46 ns | 49.82–51.38 ns | 44.72–45.48 ns |
-| Extreme | 49.03–49.51 ns | 29.83–30.89 ns | 29.08–29.18 ns |
+The standalone direct UTF-8 emitter wrote significand digits into the final destination. On the same raw-bit `double` corpus, it measured 40.91 ns/value against 40.85 ns/value for the buffered emitter in one DefaultJob session (15 measured iterations, zero allocations). It was removed because this run showed no benefit.
 
-The pinned #131068 port led on `JsonLike` in both sessions; Zmij led on `Random` and the repeated 2^53−1 case in both. `Simple` changed order between sessions, and `Extreme` had a small Zmij lead. The repeated-value case says nothing about varied long significands. These results cannot rank the two algorithms in CoreLib.
-
-## Digits and scale only
-
-These methods produce digits and scale without complete presentation. The pinned #131068 port is `double` only and skips zero/non-finite inputs, while Zmij handles zero in its producer; `Simple` and `JsonLike` include zero, so those rows do not exercise identical input work. The raw-bit corpus contains very few such values. A fresh 2,000,000-pattern audit found identical normalized digits and scale from both adapters on its sampled finite nonzero cases.
-
-| Corpus | Zmij | #131068 local port |
-|---|---:|---:|
-| Simple | 20.11–20.17 ns | 15.47–15.92 ns |
-| JsonLike | 21.82–21.86 ns | 16.42–16.73 ns |
-| Repeated 2^53−1 (historical `LongSignificand`) | 17.41–17.57 ns | 18.46–18.96 ns |
-| Random | 24.36–24.44 ns | 21.45–23.05 ns |
-| Extreme | 19.16–19.17 ns | 15.95–16.48 ns |
-
-## Optimization experiments
-
-The standalone direct UTF-8 emitter tried here wrote significand digits into the final destination. It passed the sampled verifier but did not beat the existing buffered emitter on the same raw-bit `double` corpus: `PathSplitBenchmarks.Zmij` measured **40.85 ns**, and `Zmij_Direct` measured **40.91 ns** in one DefaultJob session (15 measured iterations; zero allocations). The direct variant was removed. This experiment does not rule out a differently structured CoreLib direct writer.
-
-The temporary `BigInteger` counted-precision path was a poor fit for this library. In one ShortRun on `G5`, direct runtime `TryFormat` measured **57.96 ns, 0 B**, while the local counted path measured **1,903.94 ns, 1,125 B**. Explicit `G` precision now delegates to the runtime; a follow-up ShortRun measured **57.40 ns** for direct runtime `G5` and **57.53 ns** for the Zmij fallback, both allocation-free. These before/after sessions are separate and are evidence for removing the counted experiment, not a precise speedup ratio.
-
-## Size
-
-The [size and assembly record](size-and-assembly.md) uses one minimal `double` shortest-producer project for both algorithms, excluding the standalone formatter. Its current Release DLLs are 12,288 B for compact Zmij and 19,968 B for the pinned #131068 local port. It separates these PE lengths from counted source data and x64 JIT code. [`verify_compact_cache.py`](../tools/verify_compact_cache.py) re-derives all 618 compact entries with exact integers.
+The temporary `BigInteger` counted-precision path measured 1,904 ns and 1,125 B per call on `G5`, versus 58 ns and no allocation for runtime `G5`. Explicit `G` precision now delegates to the runtime; a follow-up ShortRun measured 57.53 ns for that fallback versus 57.40 ns for direct runtime `G5`, both allocation-free. These experiments concern removed or fallback paths, not the shortest-decomposition comparison above.
 
 ## Consumer benchmark limit
 
-The earlier JSON experiment compared `Utf8JsonWriter` with a hand-written array writer using Zmij. It changed writer and buffer strategy as well as conversion, so its timing cannot attribute a gain to the converter. A useful runtime comparison needs the same `System.Text.Json` consumer on matched baseline and candidate CoreLib builds.
+An earlier JSON experiment compared `Utf8JsonWriter` with a hand-written array writer using Żmij. It changed writer and buffer strategy along with conversion, so its timing cannot attribute a gain to the converter. A useful runtime comparison needs the same `System.Text.Json` consumer on matched baseline and candidate CoreLib builds.

@@ -4,7 +4,7 @@ These benchmarks split the local `double` paths at three boundaries: shortest de
 
 ## Inputs and checks
 
-[`ComponentBenchmarks.cs`](../benchmarks/ZmijSharp.Benchmarks/ComponentBenchmarks.cs) uses 10,000 finite, nonzero values per workload. `Simple` cycles 14 common values, `LongSignificand` varies 52 mantissa bits under a fixed binary exponent, and `Random` draws deterministic IEEE bit patterns, substituting 1.25 for zero and nonfinite encodings. Setup requires at least 9,000 distinct long-significand values. The historical workload reports in [benchmark-results](benchmark-results.md) predate this guard and repeated one value because of a mask error; **these component reports use the corrected corpus**.
+[`ComponentBenchmarks.cs`](../benchmarks/ZmijSharp.Benchmarks/ComponentBenchmarks.cs) uses 10,000 finite, nonzero values per workload. `Simple` cycles 14 common values, `LongSignificand` varies 52 mantissa bits under a fixed binary exponent, and `Random` draws deterministic IEEE bit patterns, substituting 1.25 for zero and nonfinite encodings. Setup requires at least 9,000 distinct long-significand values. An older workload generator repeated one value because of a mask error; **these component reports use the corrected corpus**.
 
 Setup checks every Zmij canonical `(significand, exponent)` against the local port's canonical tuple. It also checks the span and pointer buffer variants byte for byte, including the terminator, and verifies their count and scale against Zmij. The timed methods use the same value or precomputed integer sequence within each workload. Buffer benchmarks exclude decimal decomposition; decomposition benchmarks exclude digit writing and presentation.
 
