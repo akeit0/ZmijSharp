@@ -45,12 +45,12 @@ The same Zmij minimal project can source-link either cache, with the same finite
 |---|---:|---:|
 | Cached-power source constants | 830 B | 9,888 B |
 | Minimal `Shortest.Core.dll` | 12,288 B | 20,480 B |
-| JIT `ToDecimal(ulong, int, bool)` | 974 B | 610 B |
-| Listed shortest call tree | 1,742 B | 1,378 B |
+| JIT `ToDecimal(ulong, int, int, ulong, ulong)` | 486 B | 486 B |
+| Listed shortest call tree | 1,532 B | 1,355 B |
 
-The [earlier alternating decomposition ShortRuns](benchmark-sessions/cache-profiles-decomposition.md) used the former stride-28 cache: full took **6.118–6.148 ns/value** for varied long significands and **7.460–7.561 ns/value** for random bits; compact took **8.924** and **11.502 ns/value**. These timings are historical; [current-profile ShortRuns](benchmark-sessions/stacked-cache-short.md) are recorded separately. The current full table saves reconstruction work but adds **9,058 source-data bytes** and **8,192 B** to the minimal DLL. The measurements cover local canonical decomposition, not a separately timed cache lookup or a CoreLib build.
+The [earlier alternating decomposition ShortRuns](benchmark-sessions/cache-profiles-decomposition.md) used the former stride-28 cache: full took **6.118–6.148 ns/value** for varied long significands and **7.460–7.561 ns/value** for random bits; compact took **8.924** and **11.502 ns/value**. The [stride-16 pre-caller runs](benchmark-sessions/stacked-cache-short.md) and [current caller-placement comparison](benchmark-sessions/shared-caller-short.md) are recorded separately. The full table saves reconstruction work but adds **9,058 source-data bytes** and **8,192 B** to the minimal DLL. The measurements cover local canonical decomposition, not a separately timed cache lookup or a CoreLib build.
 
-On the regular path, the compact cache splits the power index into a 16-entry block, reads a minor and two anchor words, performs two 64-bit products, then normalizes and corrects the reconstructed pair. The full profile reads the pair directly. After either lookup, regular conversion performs two 64-bit products for scaling and one for the extra digit, followed by rounding and the entry point's trailing-decimal-zero loop. For normal powers of two, scaling uses shifts instead of the two products. The benchmark difference identifies the cache choice as a substantial cost in this implementation; it does not assign an exact nanosecond count to each operation.
+The outer conversion entry now computes the decimal exponent, shift, and cached power once before calling its regular/irregular rounding method. On the regular path, the compact cache splits the power index into a 16-entry block, reads a minor and two anchor words, performs two 64-bit products, then normalizes and corrects the reconstructed pair. The full profile reads the pair directly. Regular conversion then performs two 64-bit products for scaling and one for the extra digit, followed by rounding and the entry point's trailing-decimal-zero loop. For normal powers of two, scaling uses shifts instead of the two products. The [caller-placement ShortRuns](benchmark-sessions/shared-caller-short.md) measure the effect of moving the shared setup; they do not assign an exact nanosecond count to each operation.
 
 Rebuild and check the full minimal profile with `dotnet build -c Release tools/ShortestCoreSize/ShortestCoreSize.csproj -t:Rebuild -p:ShortestCore=Zmij -p:ZmijCache=Full`, then `dotnet run -c Release --project tools/ShortestCoreSize.Check -p:ShortestCore=Zmij -p:ZmijCache=Full`. Omit `-p:ZmijCache=Full` to return to the compact profile.
 
@@ -61,12 +61,12 @@ The check program also drives x64 RyuJIT `FullOpts` with tiering disabled. The p
 | Method role | Zmij compact | Pinned #131068 local port |
 |---|---:|---:|
 | Public adapter | 171 B | 246 B |
-| Decode input | `ToDecimal(double)` 298 B | `ExtractFractionAndBiasedExponent` 64 B |
-| Shortest conversion | `ToDecimal(ulong, int, bool)` 974 B | `ShortFloat` 708 B |
+| Decode input and prepare scaling | `ToDecimal(double)` 576 B | `ExtractFractionAndBiasedExponent` 64 B |
+| Scale and round | `ToDecimal(ulong, int, int, ulong, ulong)` 486 B | `ShortFloat` 708 B |
 | Digit writing | `TryGetSignificantDigits(ZmijDecimal, …)` 299 B | `StoreDigits` 373 B, including inlined CoreLib helpers |
-| **Listed call-tree total** | **1,742 B** | **1,391 B** |
+| **Listed call-tree total** | **1,532 B** | **1,391 B** |
 
-The compact Zmij path spends instructions reconstructing cached powers: it indexes 16 minors and 39 anchors, multiplies the words, normalizes the result, and applies one correction bit. The pinned unrounded-scaling port reads adjacent table words. Native code is larger for Zmij in this JIT run while its counted data and DLL are smaller. These method totals are observations from one architecture and JIT; they cannot be added to the DLL lengths or used as a ReadyToRun estimate.
+The compact Zmij path spends instructions reconstructing cached powers: it indexes 16 minors and 39 anchors, multiplies the words, normalizes the result, and applies one correction bit. The pinned unrounded-scaling port reads adjacent table words. Native code is larger for Zmij in this JIT run while its counted data and DLL are smaller. Moving shared scaling setup to the caller changed the Zmij split between the entry and rounding method; the listed total fell from 1,742 to 1,532 bytes. The entry has one call to the rounding method and no additional scaling helper call. These method totals are observations from one architecture and JIT; they cannot be added to the DLL lengths or used as a ReadyToRun estimate.
 
 To capture the same listings after building each profile:
 
@@ -81,4 +81,4 @@ rg 'Assembly listing for method|Total bytes of code' zmij-disasm.txt unrounded-d
 
 The log files are local outputs. Use [benchmark results](benchmark-results.md) for timings; source-data and code-size counts alone do not predict throughput.
 
-The smaller Zmij entry method comes from [consolidating finite normalization paths and simplifying the private result](optimization-notes.md). The current compact-cache change also reduces the private conversion method while increasing the minimal DLL by 512 B. The posted issue retains the earlier measurements from its pinned revision.
+Earlier normalization and result simplifications reduced the Zmij entry method, and the stride-16 cache increased the minimal DLL by 512 B. The later [caller-side move](optimization-notes.md#caller-side-scaling-setup) redistributes code between the entry and private method and reduces their listed total. The posted issue retains the measurements from its pinned earlier revision.

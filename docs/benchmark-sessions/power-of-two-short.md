@@ -1,5 +1,7 @@
 # Normal-power-of-two decomposition ShortRuns
 
+These measurements were made before the caller-side scaling change, at revision `a935dd6`. See the [later placement comparison](shared-caller-short.md) for the newer source.
+
 Windows x64, .NET SDK `11.0.100-rc.1.26425.128`, Release `net11.0`, BenchmarkDotNet 0.14.0 ShortRun. Each operation converts one of 10,000 precomputed normal powers of two to a canonical `(significand, exponent)` result. The double corpus cycles through all 2,046 normal binary64 exponents; the float corpus cycles through all 254 normal binary32 exponents. Each A/B pair used the same benchmark source and switched only the irregular-scaling implementation. Means are nanoseconds per value from three measured iterations per benchmark in separate launches.
 
 | Profile and operation | Shared multiplication | Power-of-two shift |
@@ -12,7 +14,7 @@ The compact `double` and `float` rows were measured together in each launch. The
 
 These results measure the changed branch directly. They do not measure overall formatting, the prevalence of powers of two in applications, or a CoreLib integration. Independent correctness checks cover random inputs and all binary-exponent boundaries.
 
-Reproduce the modified compact source:
+Reproduce the power-of-two benchmark on the current source:
 
 ```powershell
 dotnet run -c Release --project benchmarks/ZmijSharp.Benchmarks -- --job Short --filter "*PowerOfTwoDecompositionBenchmarks*"

@@ -34,7 +34,7 @@ The optimized path covers default formatting, `G/g`, `G0/g0`, and `R/r` (includi
 
 - All 2³² binary32 patterns passed default invariant `char` output comparison with the installed runtime. Sampled and structured inputs also pass an independent shortest-decimal oracle.
 - A deterministic 100-million-pattern `double` sample passed default `char` and UTF-8 output comparison. A pinned upstream Żmij differential passed on one million random patterns per type plus exponent boundaries after trailing-zero normalization.
-- In [component benchmarks](docs/component-benchmarks.md), the local #131068 port was faster at equal canonical decimal decomposition on varied inputs. Pointer and span digit buffers were near parity. A later [x64 JIT experiment](docs/optimization-notes.md) reduced Zmij's native call tree without establishing a throughput gain.
+- In the [current compact decomposition comparison](docs/benchmark-sessions/current-compact-comparison-short.md), the local #131068 port remained faster at equal canonical decimal decomposition on varied inputs. Pointer and span digit buffers were near parity in [component benchmarks](docs/component-benchmarks.md). Moving scaling setup into Zmij's caller reduced its native call tree and improved some [local A/B workloads](docs/benchmark-sessions/shared-caller-short.md).
 - ARM64, ReadyToRun, NativeAOT, and CoreLib integration have not been measured here.
 
 For exact commands and coverage, see [completed evidence](docs/evidence.md). For methods, environment, and numbers, see [component benchmarks](docs/component-benchmarks.md). The [work plan](docs/plan.md) tracks what is still needed.
