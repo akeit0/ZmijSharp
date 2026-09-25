@@ -32,3 +32,7 @@ The local unrounded-scaling comparison uses an older #131068 snapshot (`50ef2d06
 - Is this narrower shortest-producer experiment useful alongside or after #131068?
 - Is digits plus scale into CoreLib's existing number buffer the right first integration boundary?
 - What correctness, performance, portability, and size evidence would make a follow-up PR worth reviewing?
+
+## Reproducible reference
+
+The [public ZmijSharp revision `f8934e2`](https://github.com/akeit0/ZmijSharp/tree/f8934e272bf71e579cf79492db011cd3aac02c12) contains the implementation used for these local measurements, the [completed evidence record](https://github.com/akeit0/ZmijSharp/blob/f8934e272bf71e579cf79492db011cd3aac02c12/docs/evidence.md), the [benchmark method and results](https://github.com/akeit0/ZmijSharp/blob/f8934e272bf71e579cf79492db011cd3aac02c12/docs/benchmark-results.md), and the [size and assembly record](https://github.com/akeit0/ZmijSharp/blob/f8934e272bf71e579cf79492db011cd3aac02c12/docs/size-and-assembly.md). The current issue draft is maintained in this repository; the evidence links point to an immutable revision.

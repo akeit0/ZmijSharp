@@ -1,6 +1,6 @@
 # Local benchmark results
 
-These are measurements of standalone assemblies on one Windows x64 machine, not matched `dotnet/runtime` builds. The workload session below ran on 2026-09-25; subsequent edits before the initial public revision changed only documentation and a source attribution comment. The local unrounded-scaling comparison assembly adapts a [#131068 source snapshot at `50ef2d06`](../src/UnroundedScaling.Comparison/SOURCE.md); the PR head had advanced to `56ff8516` when this report was updated. Do not quote these rows as a measured win over the current PR or as a projected CoreLib result.
+These are measurements of standalone assemblies on one Windows x64 machine, not matched `dotnet/runtime` builds. The workload session below ran on 2026-09-25. The [initial public revision](https://github.com/akeit0/ZmijSharp/tree/f8934e272bf71e579cf79492db011cd3aac02c12) contains the measured implementation; intervening edits changed only documentation and a source attribution comment. The local unrounded-scaling comparison assembly adapts a [#131068 source snapshot at `50ef2d06`](../src/UnroundedScaling.Comparison/SOURCE.md); the PR head had advanced to `56ff8516` when this report was updated. Do not quote these rows as a measured win over the current PR or as a projected CoreLib result.
 
 ## Environment and method
 

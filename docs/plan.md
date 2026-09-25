@@ -10,9 +10,9 @@ The [proposal](proposal.md) is the text to show `dotnet/runtime` maintainers. Th
 - [x] License original repository work under MIT in Akito Inoue's name, while retaining [third-party notices](../THIRD-PARTY-NOTICES.txt) for reference and source material.
 - [ ] Recover exact source revisions for any borrowed converter material, if possible. The pinned [upstream differential](../tools/verify_upstream.py) establishes behavior, not source provenance; [third-party notices](../THIRD-PARTY-NOTICES.txt) retain both reference licenses meanwhile.
 - [ ] Repeat representative local benchmarks in multiple controlled sessions. Keep complete formatting, digit production, and unchanged integer controls separate; do not promote a near-parity ShortRun to a stable speed claim.
-- [ ] Make the repository public, then add its immutable revision link to the issue text and check every link from the GitHub-rendered view.
+- [x] Make the repository public and add its immutable revision link to the [issue text](proposal.md).
 
-The remaining evidence and publication tasks do not require a `dotnet/runtime` fork.
+The remaining provenance and repeated-measurement tasks do not require a `dotnet/runtime` fork.
 
 ## 2. Ask for scope before implementing a runtime patch
 
