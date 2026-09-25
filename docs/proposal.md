@@ -28,15 +28,15 @@ The [full-cache diagnostic](size-and-assembly.md#full-cache-diagnostic) makes th
 - A separate exact-integer shortest-decimal oracle passed sampled and exponent-boundary cases. A pinned upstream Żmij differential passed one million random patterns per type plus exponent boundaries after normalizing trailing-zero representation differences.
 - A matrix of four number-format providers, 14 format strings, and destination capacities passed against the installed runtime. This checks the standalone wrapper; it does not establish CoreLib integration behavior.
 
-The [current decomposition ShortRuns](benchmark-sessions/nonzero-last-digit-short.md) measured finite nonzero `double` conversion without digit writing on Windows x64 with .NET 11 RC. Each cache profile and its #131068 control ran in the same BenchmarkDotNet launch; the compact and full launches were separate. Both local producers returned the same canonical `(significand, exponent)` on every input. Values are ns/value over 10,000-value corpora; lower is better.
+The [current decomposition ShortRun](benchmark-sessions/same-run-cache-profiles-short.md) measured finite nonzero `double` conversion without digit writing on Windows x64 with .NET 11 RC. The [benchmark class](../benchmarks/ZmijSharp.Benchmarks/CacheProfileDecompositionBenchmarks.cs) references compact, full, and #131068 producer assemblies in one build. BenchmarkDotNet launches each case in a separate process. Setup checked equal canonical `(significand, exponent)` tuples on every input. Values are ns/value over 10,000-value corpora; lower is better.
 
-| Corpus | Zmij compact | UnroundedScaling, compact launch | Zmij full | UnroundedScaling, full launch |
-|---|---:|---:|---:|---:|
-| Simple | 18.889 | 15.401 | 15.539 | 15.171 |
-| Varied long significands | 8.105 | 6.541 | 5.752 | 6.647 |
-| Random raw IEEE bits | 10.124 | 9.043 | 6.232 | 8.787 |
+| Corpus | Zmij compact | Zmij full | #131068 local port |
+|---|---:|---:|---:|
+| Simple | 18.448 | 15.525 | 15.187 |
+| Varied long significands | 8.108 | 5.783 | 6.763 |
+| Random raw IEEE bits | 10.175 | 6.058 | 8.880 |
 
-The compact profile was slower than the local #131068 port on these corpora. In one full-cache launch, Zmij was faster on varied long significands and random bits and close on simple values, at the larger table and DLL size above. The port's diagnostic canonical helper trims integer trailing zeros, whereas production `TryRun` trims written bytes; Zmij's entry point retains sign and exceptional-value handling. The buffer probe found pointer and span storage near parity, while byte-to-`char` staging in the local comparison wrapper had a larger measured cost. These component results do not predict relative performance in CoreLib; [methods, caveats, and raw summaries](component-benchmarks.md) are linked here.
+The compact profile was slower than the local #131068 port on these corpora. Full-cache Zmij was faster on varied long significands and random bits and close on simple values, at the larger table and DLL size above. The port's diagnostic canonical helper trims integer trailing zeros, whereas production `TryRun` trims written bytes; Zmij's entry point retains sign and exceptional-value handling. The buffer probe found pointer and span storage near parity, while byte-to-`char` staging in the local comparison wrapper had a larger measured cost. These component results do not predict relative performance in CoreLib; [methods, caveats, and raw summaries](component-benchmarks.md) are linked here.
 
 The output sweep establishes compatibility with one runtime version. Independent shortestness coverage is smaller. A runtime change would need matched CoreLib builds and a broader performance record.
 
@@ -55,4 +55,4 @@ This candidate covers shortest `float` and `double`; it does not yet provide `Ha
 
 ## Reproducible reference
 
-The measured converter source is [revision `d0ee1bc`](https://github.com/akeit0/ZmijSharp/tree/d0ee1bc). A [constructor cleanup at `61b47a6`](https://github.com/akeit0/ZmijSharp/tree/61b47a6) preserves the `double` x64 JIT instructions in both cache profiles. The [current decomposition results](benchmark-sessions/nonzero-last-digit-short.md) and [size and assembly record](size-and-assembly.md) describe that source. The [component methods and earlier stage measurements](component-benchmarks.md) remain available for diagnosis. The posted issue retains its pinned earlier revision until its body is explicitly updated.
+The [measured benchmark source at `d932eda`](https://github.com/akeit0/ZmijSharp/tree/d932eda) includes both cache profiles and the pinned comparison port. The [current decomposition results](benchmark-sessions/same-run-cache-profiles-short.md) and [size and assembly record](size-and-assembly.md) describe the measurements. The [component methods and earlier stage measurements](component-benchmarks.md) remain available for diagnosis. The posted issue retains its pinned earlier revision until its body is explicitly updated.
