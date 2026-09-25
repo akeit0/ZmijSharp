@@ -22,3 +22,9 @@ The upstream .NET Foundation/MIT headers and Go BSD attribution are retained in 
   back to the runtime public API. It calls `TryRun` directly (finite non-zero
   input is already established); the `char` path widens ASCII digits with a
   tight loop while the UTF-8 path feeds them direct.
+- `GetRawShortest` and `GetCanonicalShortest` in the adapted producer expose
+  benchmark-only decomposition boundaries for finite nonzero `double` values.
+  The canonical helper trims integer trailing zeros; production `TryRun` trims
+  written bytes in `StoreDigits`. These helpers are excluded from the minimal
+  `SHORTEST_ONLY` assembly. `StoreDigits` is internal for the buffer-stage
+  benchmark.

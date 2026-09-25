@@ -6,7 +6,7 @@ These are measurements of standalone assemblies on one Windows x64 machine, not 
 
 - Windows 11 x64 (build `10.0.26200.9457`), .NET SDK `11.0.100-rc.1.26425.128`, installed runtime reported by BenchmarkDotNet as `.NET 11.0.0 (11.0.26.42628)`, X64 RyuJIT AVX2. BenchmarkDotNet reported the processor as unknown.
 - BenchmarkDotNet 0.14.0, `--job Short`: one launch, three warmup and three measured iterations per session. `OperationsPerInvoke = 10_000` normalizes each batch to one value. Two separate sessions on the same code state are preserved as [session 1](benchmark-sessions/pr-56ff8516-short-1.md) and [session 2](benchmark-sessions/pr-56ff8516-short-2.md). Ranges below show the two session means, not a confidence interval.
-- Each session used the same deterministic 10,000-value corpora. Values are raw IEEE patterns for `Random`, cycling common values for `Simple` and `JsonLike`, long-significand cases, or extremes. The source is [`WorkloadBenchmarks.cs`](../benchmarks/ZmijSharp.Benchmarks/WorkloadBenchmarks.cs). The current PR port passed a separate 2,000,000-pattern and binary-exponent-boundary digits, round-trip, and formatted-output check before these runs.
+- Each session used the same deterministic 10,000-value corpora. Values are raw IEEE patterns for `Random`, cycling common values for `Simple` and `JsonLike`, or extremes. **The historical `LongSignificand` generator accidentally repeated the single value 2^53−1 10,000 times**: it ORed random mantissa bits into a mask whose mantissa was already all ones. The generator is fixed in the current [`WorkloadBenchmarks.cs`](../benchmarks/ZmijSharp.Benchmarks/WorkloadBenchmarks.cs), so rerunning that row no longer reproduces the pinned session. The PR port passed a separate 2,000,000-pattern and binary-exponent-boundary digits, round-trip, and formatted-output check before these runs.
 - Complete `TryFormat` rows format into preallocated `Span<char>` buffers. The two significant-digit rows only produce digits and scale. They are diagnostics and must not share a speed ratio with complete formatting.
 - Allocations measured zero for every row in both sessions. These two short sessions are directional and did not include an unchanged integer control; near-parity results need a stronger measurement before a performance claim.
 
@@ -24,11 +24,11 @@ All values and methods in each row use the same workload. The two local implemen
 |---|---:|---:|---:|
 | Simple | 33.25–34.77 ns | 27.41–30.34 ns | 27.95–30.17 ns |
 | JsonLike | 30.36–30.61 ns | 28.08–28.68 ns | 29.93–30.10 ns |
-| LongSignificand | 64.91–66.31 ns | 33.57–39.79 ns | 24.40–24.68 ns |
+| Repeated 2^53−1 (historical `LongSignificand`) | 64.91–66.31 ns | 33.57–39.79 ns | 24.40–24.68 ns |
 | Random | 88.58–89.46 ns | 49.82–51.38 ns | 44.72–45.48 ns |
 | Extreme | 49.03–49.51 ns | 29.83–30.89 ns | 29.08–29.18 ns |
 
-The pinned #131068 port led on `JsonLike` in both sessions; Zmij led on `LongSignificand` and `Random` in both. `Simple` changed order between sessions, and `Extreme` had a small Zmij lead. The raw-bit and long-significand distributions do not represent an average application's value mix. These results cannot rank the two algorithms in CoreLib.
+The pinned #131068 port led on `JsonLike` in both sessions; Zmij led on `Random` and the repeated 2^53−1 case in both. `Simple` changed order between sessions, and `Extreme` had a small Zmij lead. The repeated-value case says nothing about varied long significands. These results cannot rank the two algorithms in CoreLib.
 
 ## Digits and scale only
 
@@ -38,7 +38,7 @@ These methods produce digits and scale without complete presentation. The pinned
 |---|---:|---:|
 | Simple | 20.11–20.17 ns | 15.47–15.92 ns |
 | JsonLike | 21.82–21.86 ns | 16.42–16.73 ns |
-| LongSignificand | 17.41–17.57 ns | 18.46–18.96 ns |
+| Repeated 2^53−1 (historical `LongSignificand`) | 17.41–17.57 ns | 18.46–18.96 ns |
 | Random | 24.36–24.44 ns | 21.45–23.05 ns |
 | Extreme | 19.16–19.17 ns | 15.95–16.48 ns |
 

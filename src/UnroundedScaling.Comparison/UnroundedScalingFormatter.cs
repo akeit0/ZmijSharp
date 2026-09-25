@@ -5,9 +5,9 @@ namespace UnroundedScaling.Comparison;
 
 // Comparison-only complete formatting path over the unrounded-scaling
 // decomposition. Presentation policy (measure, preflight, fixed/scientific
-// writes) is ZmijFormatter's, reused verbatim, so the measured
-// The fixed/scientific presentation code is shared, while each path prepares
-// digits differently. The Verify audit checks formatted-output agreement.
+// writes) is ZmijFormatter's, reused verbatim. Each path prepares digits
+// differently, so complete formatting includes those costs. The Verify audit
+// checks formatted-output agreement.
 //
 // Shortest unconstrained path only: counted precision, non-finite values,
 // and unsupported formats fall back to the runtime public API — the same

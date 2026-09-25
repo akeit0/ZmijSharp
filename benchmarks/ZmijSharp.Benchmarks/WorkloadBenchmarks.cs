@@ -41,10 +41,12 @@ public class WorkloadBenchmarks
                 "Simple" => simple[i % simple.Length],
                 "JsonLike" => jsonLike[i % jsonLike.Length],
                 "Extreme" => extreme[i % extreme.Length],
-                "LongSignificand" => BitConverter.Int64BitsToDouble(unchecked((long)(0x433FFFFFFFFFFFFFUL | (NextBits(ref state) & 0x000FFFFFFFFFFFFFUL)))),
+                "LongSignificand" => BitConverter.Int64BitsToDouble(unchecked((long)(0x4330000000000000UL | (NextBits(ref state) & 0x000FFFFFFFFFFFFFUL)))),
                 _ => BitConverter.Int64BitsToDouble(unchecked((long)NextBits(ref state))),
             };
         }
+        if (Workload == "LongSignificand" && _values.Distinct().Count() < 9_000)
+            throw new InvalidOperationException("LongSignificand corpus must contain varied values.");
     }
 
     [Benchmark(OperationsPerInvoke = 10_000)]

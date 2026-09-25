@@ -32,11 +32,13 @@ Two Windows x64 ShortRun sessions measured complete `double` `TryFormat` into pr
 |---|---:|---:|---:|
 | Simple | 33.25–34.77 ns | 27.41–30.34 ns | 27.95–30.17 ns |
 | JsonLike | 30.36–30.61 ns | 28.08–28.68 ns | 29.93–30.10 ns |
-| LongSignificand | 64.91–66.31 ns | 33.57–39.79 ns | 24.40–24.68 ns |
+| Repeated 2^53−1 | 64.91–66.31 ns | 33.57–39.79 ns | 24.40–24.68 ns |
 | Random raw IEEE bits | 88.58–89.46 ns | 49.82–51.38 ns | 44.72–45.48 ns |
 | Extreme | 49.03–49.51 ns | 29.83–30.89 ns | 29.08–29.18 ns |
 
-The #131068 port led on `JsonLike` in both sessions; Zmij led on `LongSignificand` and raw-bit inputs in both. `Simple` changed order, and `Extreme` showed a small Zmij lead. Digits-only measurements favor the #131068 port on most corpora; those methods omit complete formatting and their zero handling differs. BenchmarkDotNet 0.14.0 ShortRun used the .NET 11 RC runtime on one Windows x64 machine, one launch per session, three warmup iterations, and three measured iterations. All rows recorded zero allocations. These standalone measurements do not predict a CoreLib result or represent an average application's value mix. The full methods, results, and raw sessions are linked below.
+The #131068 port led on `JsonLike` in both sessions; Zmij led on raw-bit inputs and the repeated 2^53−1 case. The latter was labeled `LongSignificand` in the pinned reports, but a generator bug made all 10,000 values identical; it is a single-value stress case, not a varied corpus. The generator is fixed in the current repository. `Simple` changed order, and `Extreme` showed a small Zmij lead. Digits-only measurements favor the #131068 port on most corpora; those methods omit complete formatting and their zero handling differs. BenchmarkDotNet 0.14.0 ShortRun used the .NET 11 RC runtime on one Windows x64 machine, one launch per session, three warmup iterations, and three measured iterations. All rows recorded zero allocations. These standalone measurements do not predict a CoreLib result or represent an average application's value mix. The full methods, results, and raw sessions are linked below.
+
+A later [component experiment](https://github.com/akeit0/ZmijSharp/blob/main/docs/component-benchmarks.md) isolates finite nonzero `double` decomposition without digit writing. With both local paths returning the same canonical significand and exponent, the pinned #131068 specialization was faster: **8.51–9.11 ns/value versus 11.59–11.81** for Zmij on raw IEEE-bit inputs, and **6.76–6.81 versus 8.99–9.05** on corrected varied long significands. A pointer-backed versus span-backed digit-buffer probe was near parity. The comparison formatter's byte-to-`char` staging had a larger measured cost, so the complete `char` timing above cannot be attributed to the shortest algorithm alone. These are separate short diagnostic sessions, not additive stage timings.
 
 The output sweep establishes compatibility with one runtime version. Independent shortestness coverage is smaller. A runtime change would need matched CoreLib builds and a broader performance record.
 

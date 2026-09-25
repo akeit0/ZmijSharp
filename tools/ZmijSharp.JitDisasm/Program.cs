@@ -30,4 +30,5 @@ ZmijFormatter.TryFormatUtf8(floatValue, bytes, out _, "R");
 ZmijCore.TryGetSignificantDigits(doubleValue, bytes, out _, out _, out _);
 ZmijCore.TryGetSignificantDigits(floatValue, bytes, out _, out _, out _);
 UnroundedScalingDigits.TryGetSignificantDigits(doubleValue, bytes, out _, out _);
+UnroundedScalingFormatter.TryFormat(doubleValue, chars, out _, "R", invariant);
 return 0;

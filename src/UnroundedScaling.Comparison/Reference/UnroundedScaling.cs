@@ -115,6 +115,32 @@ internal static partial class UnroundedScaling
         return true;
     }
 
+#if !SHORTEST_ONLY
+    // Benchmark boundaries: the scaling result before digit writing, and its
+    // canonical tuple. The production path trims characters in StoreDigits.
+    internal static (ulong Significand, int Exponent) GetRawShortest(double value)
+    {
+        Debug.Assert(double.IsFinite(value) && value != 0);
+        ulong mantissa = ExtractFractionAndBiasedExponent(Math.Abs(value), out int exponent);
+        int shift = BitOperations.LeadingZeroCount(mantissa);
+        mantissa <<= shift;
+        exponent -= shift;
+
+        return ShortFloat(mantissa, exponent);
+    }
+
+    internal static (ulong Significand, int Exponent) GetCanonicalShortest(double value)
+    {
+        (ulong digits, int decimalExponent) = GetRawShortest(value);
+        while (digits % 10 == 0)
+        {
+            digits /= 10;
+            decimalExponent++;
+        }
+        return (digits, decimalExponent);
+    }
+#endif
+
     private static ulong ExtractFractionAndBiasedExponent(double value, out int exponent)
     {
         ulong bits = unchecked((ulong)BitConverter.DoubleToInt64Bits(value));
@@ -268,7 +294,7 @@ internal static partial class UnroundedScaling
 
     // Stores digits * 10^decimalExponent in UnroundedBuffer form. Formatting before
     // trimming avoids the repeated integer divisions that penalize powers of ten.
-    private static unsafe void StoreDigits(ref UnroundedBuffer number, ulong digits, int decimalExponent)
+    internal static unsafe void StoreDigits(ref UnroundedBuffer number, ulong digits, int decimalExponent)
     {
         Debug.Assert(digits != 0);
 

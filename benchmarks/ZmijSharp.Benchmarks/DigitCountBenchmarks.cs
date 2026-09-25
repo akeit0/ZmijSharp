@@ -24,13 +24,15 @@ public class DigitCountBenchmarks
             double value = Workload switch
             {
                 "Simple" => simple[i % simple.Length],
-                "LongSignificand" => BitConverter.Int64BitsToDouble(unchecked((long)(0x433FFFFFFFFFFFFFUL | (bits & 0x000FFFFFFFFFFFFFUL)))),
+                "LongSignificand" => BitConverter.Int64BitsToDouble(unchecked((long)(0x4330000000000000UL | (bits & 0x000FFFFFFFFFFFFFUL)))),
                 _ => BitConverter.Int64BitsToDouble(unchecked((long)bits)),
             };
             _values[i] = double.IsFinite(value) ? ZmijCore.ToDecimal(value).Significand : 1;
             if (_values[i] == 0)
                 _values[i] = 1;
         }
+        if (Workload == "LongSignificand" && _values.Distinct().Count() < 9_000)
+            throw new InvalidOperationException("LongSignificand corpus must contain varied values.");
     }
 
     [Benchmark(Baseline = true, OperationsPerInvoke = 10_000)]

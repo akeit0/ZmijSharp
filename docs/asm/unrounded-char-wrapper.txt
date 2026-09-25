@@ -1,0 +1,280 @@
+; Assembly listing for method UnroundedScaling.Comparison.UnroundedScalingFormatter:TryFormat(double,System.Span`1[char],byref,System.ReadOnlySpan`1[char],System.IFormatProvider):bool (FullOpts)
+; Emitting BLENDED_CODE for x64 + VEX on Windows
+; FullOpts code
+; optimized code
+; rbp based frame
+; fully interruptible
+; No PGO data
+; 8 inlinees with PGO data; 8 single block inlinees; 1 inlinees without PGO data
+
+G_M000_IG01:                ;; offset=0x0000
+       push     rbp
+       push     r15
+       push     r14
+       push     r13
+       push     r12
+       push     rdi
+       push     rsi
+       push     rbx
+       sub      rsp, 168
+       lea      rbp, [rsp+0x40]
+       vxorps   xmm4, xmm4, xmm4
+       vmovdqu  ymmword ptr [rbp], ymm4
+       vmovdqu  ymmword ptr [rbp+0x20], ymm4
+       vmovdqu  ymmword ptr [rbp+0x40], ymm4
+       mov      rax, 0xA7A97D14AEAC
+       mov      qword ptr [rbp+0x60], rax
+       vmovsd   qword ptr [rbp+0xB0], xmm0
+       mov      rbx, rdx
+
+G_M000_IG02:                ;; offset=0x0044
+       mov      rsi, gword ptr [rbp+0xD0]
+       mov      rdi, r9
+       mov      r14, r8
+
+G_M000_IG03:                ;; offset=0x0051
+       vmovdqu  xmm1, xmmword ptr [rdi]
+       vmovdqu  xmmword ptr [rbp], xmm1
+
+G_M000_IG04:                ;; offset=0x005A
+       lea      rcx, [rbp]
+       lea      rdx, [rbp+0x38]
+       mov      rax, 0x7FF7B3F648A0
+       call     [rax]ZmijSharp.ZmijFormatter:TryParseSupportedFormat(System.ReadOnlySpan`1[char],byref):bool
+       test     eax, eax
+       je       G_M000_IG25
+
+G_M000_IG05:                ;; offset=0x0076
+       mov      rax, qword ptr [rbp+0xB0]
+       mov      rcx, 0x7FF0000000000000
+       andn     rax, rax, rcx
+       je       G_M000_IG19
+
+G_M000_IG06:                ;; offset=0x0092
+       test     rsi, rsi
+       jne      G_M000_IG15
+
+G_M000_IG07:                ;; offset=0x009B
+       mov      rax, 0x7FF7B3F65908
+       call     [rax]System.Globalization.NumberFormatInfo:get_CurrentInfo():System.Globalization.NumberFormatInfo
+       mov      rdi, rax
+
+G_M000_IG08:                ;; offset=0x00AA
+       lea      rsi, [rbp+0x40]
+       vmovsd   xmm0, qword ptr [rbp+0xB0]
+       vmovq    rdx, xmm0
+       mov      r15, rdx
+       shr      r15, 63
+       vxorps   xmm1, xmm1, xmm1
+       vucomisd xmm0, xmm1
+       jp       G_M000_IG16
+       jne      G_M000_IG16
+       xor      ecx, ecx
+       xor      edx, edx
+
+G_M000_IG09:                ;; offset=0x00DA
+       test     dword ptr [rsp], esp
+       sub      rsp, 48
+       lea      r8, [rsp+0x40]
+       vxorps   ymm0, ymm0, ymm0
+       vmovdqu  ymmword ptr [r8], ymm0
+       vmovdqu  xmmword ptr [r8+0x20], xmm0
+       mov      r13, r8
+       xor      r12d, r12d
+       test     ecx, ecx
+       jle      SHORT G_M000_IG12
+
+G_M000_IG10:                ;; offset=0x00FF
+       cmp      ecx, 20
+       jg       G_M000_IG18
+       align    [0 bytes for IG11]
+
+G_M000_IG11:                ;; offset=0x0108
+       mov      r8d, r12d
+       movzx    r9, byte  ptr [rsi+r8]
+       mov      word  ptr [r13+2*r8], r9w
+       inc      r12d
+       cmp      r12d, ecx
+       jl       SHORT G_M000_IG11
+
+G_M000_IG12:                ;; offset=0x011E
+       cmp      ecx, 20
+       ja       G_M000_IG31
+       mov      bword ptr [rbp], r13
+       mov      dword ptr [rbp+0x08], ecx
+       mov      bword ptr [rsp+0x20], r14
+       mov      ecx, dword ptr [rbp+0x38]
+       mov      dword ptr [rsp+0x28], ecx
+       mov      gword ptr [rsp+0x30], rdi
+       xor      ecx, ecx
+       mov      dword ptr [rsp+0x38], ecx
+       lea      rcx, [rbp]
+       mov      r8d, r15d
+       mov      r9, rbx
+       mov      rax, 0x7FF7B3F64E58
+       call     [rax]ZmijSharp.ZmijFormatter:TryWriteChar(System.ReadOnlySpan`1[char],int,bool,System.Span`1[char],byref,ZmijSharp.ZmijFormatter+FormatSpec,System.Globalization.NumberFormatInfo,bool):bool
+       mov      r9, 0xA7A97D14AEAC
+       cmp      qword ptr [rbp+0x60], r9
+       je       SHORT G_M000_IG13
+       call     CORINFO_HELP_FAIL_FAST
+
+G_M000_IG13:                ;; offset=0x0170
+       nop
+
+G_M000_IG14:                ;; offset=0x0171
+       lea      rsp, [rbp+0x68]
+       pop      rbx
+       pop      rsi
+       pop      rdi
+       pop      r12
+       pop      r13
+       pop      r14
+       pop      r15
+       pop      rbp
+       ret
+
+G_M000_IG15:                ;; offset=0x0182
+       mov      rcx, rsi
+       mov      rax, 0x7FF7B3F648B8
+       call     [rax]System.Globalization.NumberFormatInfo:<GetInstance>g__GetProviderNonNull|60_0(System.IFormatProvider):System.Globalization.NumberFormatInfo
+       mov      rdi, rax
+       jmp      G_M000_IG08
+
+G_M000_IG16:                ;; offset=0x0199
+       mov      rdx, rsi
+       mov      qword ptr [rbp+0x28], rdx
+       xor      edx, edx
+       mov      dword ptr [rbp+0x30], edx
+
+G_M000_IG17:                ;; offset=0x01A5
+       mov      dword ptr [rbp+0x34], edx
+       vandps   xmm0, xmm0, xmmword ptr [reloc @RWD00]
+       lea      rdx, [rbp+0x20]
+       mov      rax, 0x7FF7B3F65338
+       call     [rax]UnroundedScaling.Comparison.UnroundedScaling:ExtractFractionAndBiasedExponent(double,byref):ulong
+       xor      ecx, ecx
+       lzcnt    rcx, rax
+       shlx     rax, rax, rcx
+       mov      edx, dword ptr [rbp+0x20]
+       sub      edx, ecx
+       mov      dword ptr [rbp+0x20], edx
+       lea      rcx, [rbp+0x10]
+       mov      rdx, rax
+       mov      r8d, dword ptr [rbp+0x20]
+       mov      rax, 0x7FF7B3F65350
+       call     [rax]UnroundedScaling.Comparison.UnroundedScaling:ShortFloat(ulong,int):System.ValueTuple`2[ulong,int]
+       lea      rcx, [rbp+0x28]
+       mov      rdx, qword ptr [rbp+0x10]
+       mov      r8d, dword ptr [rbp+0x18]
+       mov      rax, 0x7FF7B3F65368
+       call     [rax]UnroundedScaling.Comparison.UnroundedScaling:StoreDigits(byref,ulong,int)
+       mov      ecx, dword ptr [rbp+0x34]
+       mov      edx, dword ptr [rbp+0x30]
+       jmp      G_M000_IG09
+
+G_M000_IG18:                ;; offset=0x020E
+       cmp      r12d, 20
+       jae      G_M000_IG32
+       mov      eax, r12d
+       mov      ecx, r12d
+       movzx    rcx, byte  ptr [rsi+rcx]
+       mov      word  ptr [r13+2*rax], cx
+       inc      r12d
+       jmp      SHORT G_M000_IG18
+
+G_M000_IG19:                ;; offset=0x022D
+       test     rsi, rsi
+       jne      SHORT G_M000_IG24
+
+G_M000_IG20:                ;; offset=0x0232
+       mov      rax, 0x7FF7B3F65908
+       call     [rax]System.Globalization.NumberFormatInfo:get_CurrentInfo():System.Globalization.NumberFormatInfo
+
+G_M000_IG21:                ;; offset=0x023E
+       mov      bword ptr [rsp+0x20], r14
+       vmovsd   xmm0, qword ptr [rbp+0xB0]
+       mov      rdx, rdi
+       mov      r8, rax
+       mov      r9, rbx
+       mov      rax, 0x7FF7B3F64678
+       call     [rax]System.Number:TryFormatFloat[double,char](double,System.ReadOnlySpan`1[char],System.Globalization.NumberFormatInfo,System.Span`1[char],byref):bool
+       mov      r9, 0xA7A97D14AEAC
+       cmp      qword ptr [rbp+0x60], r9
+       je       SHORT G_M000_IG22
+       call     CORINFO_HELP_FAIL_FAST
+
+G_M000_IG22:                ;; offset=0x0275
+       nop
+
+G_M000_IG23:                ;; offset=0x0276
+       lea      rsp, [rbp+0x68]
+       pop      rbx
+       pop      rsi
+       pop      rdi
+       pop      r12
+       pop      r13
+       pop      r14
+       pop      r15
+       pop      rbp
+       ret
+
+G_M000_IG24:                ;; offset=0x0287
+       mov      rcx, rsi
+       mov      rax, 0x7FF7B3F648B8
+       call     [rax]System.Globalization.NumberFormatInfo:<GetInstance>g__GetProviderNonNull|60_0(System.IFormatProvider):System.Globalization.NumberFormatInfo
+       jmp      SHORT G_M000_IG21
+
+G_M000_IG25:                ;; offset=0x0298
+       test     rsi, rsi
+       jne      SHORT G_M000_IG30
+
+G_M000_IG26:                ;; offset=0x029D
+       mov      rax, 0x7FF7B3F65908
+       call     [rax]System.Globalization.NumberFormatInfo:get_CurrentInfo():System.Globalization.NumberFormatInfo
+
+G_M000_IG27:                ;; offset=0x02A9
+       mov      bword ptr [rsp+0x20], r14
+       vmovsd   xmm0, qword ptr [rbp+0xB0]
+       mov      rdx, rdi
+       mov      r8, rax
+       mov      r9, rbx
+       mov      rax, 0x7FF7B3F64678
+       call     [rax]System.Number:TryFormatFloat[double,char](double,System.ReadOnlySpan`1[char],System.Globalization.NumberFormatInfo,System.Span`1[char],byref):bool
+       mov      r9, 0xA7A97D14AEAC
+       cmp      qword ptr [rbp+0x60], r9
+       je       SHORT G_M000_IG28
+       call     CORINFO_HELP_FAIL_FAST
+
+G_M000_IG28:                ;; offset=0x02E0
+       nop
+
+G_M000_IG29:                ;; offset=0x02E1
+       lea      rsp, [rbp+0x68]
+       pop      rbx
+       pop      rsi
+       pop      rdi
+       pop      r12
+       pop      r13
+       pop      r14
+       pop      r15
+       pop      rbp
+       ret
+
+G_M000_IG30:                ;; offset=0x02F2
+       mov      rcx, rsi
+       mov      rax, 0x7FF7B3F648B8
+       call     [rax]System.Globalization.NumberFormatInfo:<GetInstance>g__GetProviderNonNull|60_0(System.IFormatProvider):System.Globalization.NumberFormatInfo
+       jmp      SHORT G_M000_IG27
+
+G_M000_IG31:                ;; offset=0x0303
+       mov      rax, 0x7FF7B3F64E40
+       call     [rax]System.ThrowHelper:ThrowArgumentOutOfRangeException()
+       int3
+
+G_M000_IG32:                ;; offset=0x0310
+       call     CORINFO_HELP_RNGCHKFAIL
+       int3
+
+RWD00  	dq	7FFFFFFFFFFFFFFFh, 7FFFFFFFFFFFFFFFh
+
+; Total bytes of code 790

@@ -1,10 +1,12 @@
 # Digit-stage and x64 JIT experiment
 
-This experiment compares matching `ulong` digit-counting and ASCII digit-writing work in Zmij and the pinned #131068 local port. It also reduces duplicated normalization code in Zmij's `float` and `double` entry points. It does not replace the [complete formatting measurements](benchmark-results.md), which used repository revision `b051752a56215349ba47ead4aa64dd6b9a154102`.
+This experiment compares matching `ulong` digit-counting and ASCII digit-writing work in Zmij and the pinned #131068 local port. It also reduces duplicated normalization code in Zmij's `float` and `double` entry points. It does not replace the [complete formatting measurements](benchmark-results.md), which used repository revision `b051752a56215349ba47ead4aa64dd6b9a154102`. A later [component benchmark](component-benchmarks.md) isolates decimal decomposition and buffer staging with a corrected varied long-significand corpus.
 
 ## Reference and decision
 
 The pinned [original Żmij `zmij.cc`](https://github.com/vitaut/zmij/blob/d1682cb47e67474319ed146d3ca2c0e1a70f9429/zmij.cc) converts integer chunks to BCD using base-10,000, base-100, and base-10 stages, with SSE/NEON paths where available. This C# implementation uses a scalar 200-byte pair table and a log2-based digit count. The comparison port uses byte-specialized CoreLib `CountDigits` and `UInt64ToDecChars` routines. The port's `StoreDigits` also removes trailing zeros after writing, so its whole method does more than the isolated writer benchmark.
+
+The historical `LongSignificand` generator in these sessions repeated **2^53−1** rather than producing varied values. The mask is corrected in the current benchmark sources. Treat that row and the temporary integration timing below as a single-value case. The BCD8 probe itself generates varied 16-digit significands independently.
 
 Same-input BenchmarkDotNet 0.14.0 ShortRun on Windows x64, .NET SDK `11.0.100-rc.1.26425.128`; one launch, three warmup and three measured iterations, 10,000 producer-derived significands per corpus. Values are ns per significand, with zero allocations reported:
 
