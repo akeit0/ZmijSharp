@@ -11,6 +11,7 @@ The work overlaps with [dotnet/runtime#131068](https://github.com/dotnet/runtime
 | [Proposal](docs/proposal.md) | The argument and questions intended for a `dotnet/runtime` issue |
 | [Completed evidence](docs/evidence.md) | Checks that ran, what they establish, and how to repeat them |
 | [Benchmark results](docs/benchmark-results.md) and [size analysis](docs/size-and-assembly.md) | Measurement details behind the proposal |
+| [Optimization notes](docs/optimization-notes.md) | Later digit-helper comparison and x64 JIT code-size experiment |
 | [Work plan](docs/plan.md) | Remaining repository tasks, publication steps, and a possible runtime experiment |
 
 The proposal describes **what to show**; the plan records **what to do next**. No issue has been posted.
@@ -33,7 +34,7 @@ The optimized path covers default formatting, `G/g`, `G0/g0`, and `R/r` (includi
 
 - All 2³² binary32 patterns passed default invariant `char` output comparison with the installed runtime. Sampled and structured inputs also pass an independent shortest-decimal oracle.
 - A deterministic 100-million-pattern `double` sample passed default `char` and UTF-8 output comparison. A pinned upstream Żmij differential passed on one million random patterns per type plus exponent boundaries after trailing-zero normalization.
-- In two local complete-path benchmark sessions, Zmij led the pinned #131068 `double` port on raw-bit and long-significand inputs; the port led on JSON-like values. Simple values changed order between sessions. These standalone results are not a comparison on identical CoreLib builds.
+- In two local complete-path benchmark sessions at the pinned measured revision, Zmij led the #131068 `double` port on raw-bit and long-significand inputs; the port led on JSON-like values. Simple values changed order between sessions. A later [x64 JIT experiment](docs/optimization-notes.md) reduced Zmij's native call tree without establishing a new throughput claim. These standalone results are not a comparison on identical CoreLib builds.
 - ARM64, ReadyToRun, NativeAOT, and CoreLib integration have not been measured here.
 
 For exact commands and coverage, see [completed evidence](docs/evidence.md). For methods, environment, and numbers, see [benchmark results](docs/benchmark-results.md). The [work plan](docs/plan.md) tracks what is still needed.

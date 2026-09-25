@@ -21,7 +21,7 @@ internal static partial class ZmijCore
         if (binExp == 0 || binExp == FloatExponentMask)
         {
             if (binExp != 0)
-                return new ZmijDecimal(binSig, NonFiniteExponent, negative);
+                return new ZmijDecimal(binSig, NonFiniteExponent, negative, normalize: false);
 
             if (binSig == 0)
                 return new ZmijDecimal(0, 0, negative);
@@ -31,10 +31,19 @@ internal static partial class ZmijCore
         }
 
         DecimalResult dec = ToDecimalFloat(binSig ^ FloatImplicitBit, binExp, binSig != 0);
-        if (!dec.HasLastDigit)
-            return new ZmijDecimal(dec.Significand, dec.Exponent + 1, negative);
-        ulong sig = dec.Significand * 10 + (uint)dec.LastDigit;
-        return new ZmijDecimal(sig, dec.Exponent, negative);
+        ulong significand;
+        int decimalExponent;
+        if (dec.HasLastDigit)
+        {
+            significand = dec.Significand * 10 + (uint)dec.LastDigit;
+            decimalExponent = dec.Exponent;
+        }
+        else
+        {
+            significand = dec.Significand;
+            decimalExponent = dec.Exponent + 1;
+        }
+        return new ZmijDecimal(significand, decimalExponent, negative);
     }
 
     private static DecimalResult ToDecimalFloat(uint binSig, int rawExp, bool regular)

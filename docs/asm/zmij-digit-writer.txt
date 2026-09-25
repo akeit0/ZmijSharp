@@ -1,0 +1,149 @@
+; Assembly listing for method ZmijSharp.ZmijCore:TryGetSignificantDigits(ZmijSharp.ZmijDecimal,System.Span`1[byte],byref,byref,byref):bool (FullOpts)
+; Emitting BLENDED_CODE for x64 + VEX on Windows
+; FullOpts code
+; optimized code
+; rsp based frame
+; fully interruptible
+; No PGO data
+; 2 inlinees with PGO data; 10 single block inlinees; 1 inlinees without PGO data
+
+G_M000_IG01:                ;; offset=0x0000
+       push     rdi
+       push     rsi
+       push     rbp
+       push     rbx
+       push     rax
+       xor      eax, eax
+       mov      qword ptr [rsp], rax
+       mov      r10, bword ptr [rsp+0x50]
+
+G_M000_IG02:                ;; offset=0x0010
+       mov      rax, bword ptr [rdx]
+       mov      edx, dword ptr [rdx+0x08]
+       mov      r11, qword ptr [rcx]
+       mov      ebx, dword ptr [rcx+0x08]
+       movzx    rcx, byte  ptr [rcx+0x0C]
+       test     r11, r11
+       jne      SHORT G_M000_IG04
+
+G_M000_IG03:                ;; offset=0x0025
+       xor      esi, esi
+       jmp      SHORT G_M000_IG06
+
+G_M000_IG04:                ;; offset=0x0029
+       mov      rsi, r11
+       or       rsi, 1
+       lzcnt    rsi, rsi
+       xor      esi, 63
+       imul     esi, esi, 0x4D1
+       sar      esi, 12
+       inc      esi
+       mov      edi, esi
+       mov      rbp, 0x2A385454560
+       cmp      r11, qword ptr [rbp+8*rdi]
+       jae      SHORT G_M000_IG05
+       jmp      SHORT G_M000_IG06
+
+G_M000_IG05:                ;; offset=0x0058
+       inc      esi
+
+G_M000_IG06:                ;; offset=0x005A
+       mov      dword ptr [r8], esi
+       test     r11, r11
+       jne      SHORT G_M000_IG08
+
+G_M000_IG07:                ;; offset=0x0062
+       xor      esi, esi
+       jmp      SHORT G_M000_IG09
+
+G_M000_IG08:                ;; offset=0x0066
+       mov      esi, dword ptr [r8]
+       add      esi, ebx
+
+G_M000_IG09:                ;; offset=0x006B
+       mov      dword ptr [r9], esi
+       mov      byte  ptr [r10], cl
+       cmp      dword ptr [r8], edx
+       jg       G_M000_IG19
+
+G_M000_IG10:                ;; offset=0x007A
+       test     r11, r11
+       je       G_M000_IG17
+       xor      r9, r9
+       test     edx, edx
+       cmovne   r9, rax
+       mov      bword ptr [rsp], r9
+       movsxd   rax, dword ptr [r8]
+       add      rax, r9
+       mov      r8, 0x2A385454498
+       cmp      r11, 100
+       jae      SHORT G_M000_IG14
+
+G_M000_IG11:                ;; offset=0x00A6
+       mov      rcx, r11
+       jmp      SHORT G_M000_IG15
+
+G_M000_IG12:                ;; offset=0x00AB
+       add      ecx, ecx
+       movsxd   rcx, ecx
+       movzx    rcx, word  ptr [r8+rcx]
+       mov      word  ptr [rax-0x02], cx
+       jmp      SHORT G_M000_IG16
+
+G_M000_IG13:                ;; offset=0x00BB
+       mov      r11, rcx
+
+G_M000_IG14:                ;; offset=0x00BE
+       mov      r10, 0x28F5C28F5C28F5C3
+       mov      rdx, r11
+       shr      rdx, 2
+       mulx     rcx, rcx, r10
+       shr      rcx, 2
+       imul     edx, ecx, 100
+       sub      r11d, edx
+       add      r11d, r11d
+       add      rax, -2
+       movsxd   rdx, r11d
+       movzx    rdx, word  ptr [r8+rdx]
+       mov      word  ptr [rax], dx
+       cmp      rcx, 100
+       jae      SHORT G_M000_IG13
+
+G_M000_IG15:                ;; offset=0x00F6
+       cmp      rcx, 10
+       jae      SHORT G_M000_IG12
+       add      ecx, 48
+       mov      byte  ptr [rax-0x01], cl
+
+G_M000_IG16:                ;; offset=0x0102
+       xor      eax, eax
+       mov      bword ptr [rsp], rax
+
+G_M000_IG17:                ;; offset=0x0108
+       mov      eax, 1
+
+G_M000_IG18:                ;; offset=0x010D
+       add      rsp, 8
+       pop      rbx
+       pop      rbp
+       pop      rsi
+       pop      rdi
+       ret
+
+G_M000_IG19:                ;; offset=0x0116
+       xor      eax, eax
+       mov      dword ptr [r8], eax
+
+G_M000_IG20:                ;; offset=0x011B
+       mov      dword ptr [r9], eax
+       mov      byte  ptr [r10], 0
+
+G_M000_IG21:                ;; offset=0x0122
+       add      rsp, 8
+       pop      rbx
+       pop      rbp
+       pop      rsi
+       pop      rdi
+       ret
+
+; Total bytes of code 299

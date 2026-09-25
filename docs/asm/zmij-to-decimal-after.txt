@@ -1,0 +1,115 @@
+; Assembly listing for method ZmijSharp.ZmijCore:ToDecimal(double):ZmijSharp.ZmijDecimal (FullOpts)
+; Emitting BLENDED_CODE for x64 + VEX on Windows
+; FullOpts code
+; optimized code
+; rsp based frame
+; fully interruptible
+; No PGO data
+; 0 inlinees with PGO data; 9 single block inlinees; 3 inlinees without PGO data
+
+G_M000_IG01:                ;; offset=0x0000
+       push     rsi
+       push     rbx
+       sub      rsp, 56
+       mov      rbx, rcx
+
+G_M000_IG02:                ;; offset=0x0009
+       vmovq    r9, xmm1
+       lea      r8, [r9+r9]
+       shr      r8, 53
+       mov      rdx, 0xFFFFFFFFFFFFF
+       and      rdx, r9
+       shr      r9, 63
+       setne    sil
+       movzx    rsi, sil
+       test     r8d, r8d
+       jne      SHORT G_M000_IG07
+
+G_M000_IG03:                ;; offset=0x0034
+       test     rdx, rdx
+       je       SHORT G_M000_IG05
+       mov      r8d, 1
+       mov      r9, 0x10000000000000
+       or       rdx, r9
+
+G_M000_IG04:                ;; offset=0x004C
+       test     rdx, rdx
+       setne    r9b
+       movzx    r9, r9b
+       mov      rcx, 0x10000000000000
+       xor      rdx, rcx
+       lea      rcx, [rsp+0x20]
+       mov      rax, 0x7FF7B3F45A40
+       call     [rax]ZmijSharp.ZmijCore:ToDecimal(ulong,int,bool):ZmijSharp.ZmijCore+DecimalResult
+       movzx    rdx, byte  ptr [rsp+0x20]
+       mov      rax, qword ptr [rsp+0x28]
+       mov      ecx, dword ptr [rsp+0x30]
+       test     edx, edx
+       je       SHORT G_M000_IG08
+       lea      rax, [rax+4*rax]
+       dec      edx
+       lea      rax, [rdx+2*rax]
+       jmp      SHORT G_M000_IG09
+       align    [0 bytes for IG11]
+
+G_M000_IG05:                ;; offset=0x0093
+       xor      r8d, r8d
+       mov      qword ptr [rbx], r8
+
+G_M000_IG06:                ;; offset=0x0099
+       mov      dword ptr [rbx+0x08], r8d
+       mov      byte  ptr [rbx+0x0C], sil
+       jmp      G_M000_IG13
+
+G_M000_IG07:                ;; offset=0x00A6
+       cmp      r8d, 0x7FF
+       jne      SHORT G_M000_IG04
+       mov      qword ptr [rbx], rdx
+       mov      dword ptr [rbx+0x08], 0x7FFFFFFF
+       mov      byte  ptr [rbx+0x0C], sil
+       jmp      SHORT G_M000_IG13
+
+G_M000_IG08:                ;; offset=0x00BF
+       inc      ecx
+
+G_M000_IG09:                ;; offset=0x00C1
+       test     rax, rax
+       je       SHORT G_M000_IG12
+
+G_M000_IG10:                ;; offset=0x00C6
+       mov      rdx, 0xCCCCCCCCCCCCCCCD
+       mulx     rdx, rdx, rax
+       shr      rdx, 3
+       imul     rdx, rdx, 10
+       mov      r8, rax
+       sub      r8, rdx
+       jne      SHORT G_M000_IG12
+
+G_M000_IG11:                ;; offset=0x00E5
+       mov      rdx, 0xCCCCCCCCCCCCCCCD
+       mulx     rax, rax, rax
+       shr      rax, 3
+       inc      ecx
+       mov      rdx, 0xCCCCCCCCCCCCCCCD
+       mulx     rdx, rdx, rax
+       shr      rdx, 3
+       imul     rdx, rdx, 10
+       mov      r8, rax
+       sub      r8, rdx
+       je       SHORT G_M000_IG11
+
+G_M000_IG12:                ;; offset=0x0119
+       mov      qword ptr [rbx], rax
+       mov      dword ptr [rbx+0x08], ecx
+       mov      byte  ptr [rbx+0x0C], sil
+
+G_M000_IG13:                ;; offset=0x0123
+       mov      rax, rbx
+
+G_M000_IG14:                ;; offset=0x0126
+       add      rsp, 56
+       pop      rbx
+       pop      rsi
+       ret
+
+; Total bytes of code 301

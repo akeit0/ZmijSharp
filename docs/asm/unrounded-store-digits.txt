@@ -1,0 +1,137 @@
+; Assembly listing for method UnroundedScaling.Comparison.UnroundedScaling:StoreDigits(byref,ulong,int) (FullOpts)
+; Emitting BLENDED_CODE for x64 + VEX on Windows
+; FullOpts code
+; optimized code
+; rsp based frame
+; fully interruptible
+; No PGO data
+; 6 inlinees with PGO data; 16 single block inlinees; 6 inlinees without PGO data
+
+G_M000_IG01:                ;; offset=0x0000
+       push     r14
+       push     rdi
+       push     rsi
+       push     rbp
+       push     rbx
+       sub      rsp, 32
+       mov      rbx, rcx
+
+G_M000_IG02:                ;; offset=0x000D
+       mov      rcx, rdx
+       or       rcx, 1
+       lzcnt    rcx, rcx
+       xor      ecx, 63
+       mov      rax, 0x20B789238C8
+       movzx    rax, byte  ptr [rax+rcx]
+       mov      rcx, 0x20B78923908
+       cmp      rdx, qword ptr [rcx+8*rax]
+       setb     cl
+       movzx    rcx, cl
+       sub      eax, ecx
+       mov      rcx, qword ptr [rbx]
+       test     eax, eax
+       jl       G_M000_IG12
+       mov      r10d, eax
+       mov      r9d, r10d
+       mov      r11, rdx
+       cmp      r11, 10
+       jb       G_M000_IG09
+
+G_M000_IG03:                ;; offset=0x005E
+       cmp      r11, 100
+       jae      SHORT G_M000_IG06
+
+G_M000_IG04:                ;; offset=0x0064
+       mov      rdx, r11
+
+G_M000_IG05:                ;; offset=0x0067
+       cmp      rdx, 10
+       mov      r11, rdx
+       jb       G_M000_IG09
+       add      r9d, -2
+       mov      edx, r11d
+       cmp      edx, 100
+       jae      G_M000_IG13
+       mov      rsi, 0x20B78926530
+       movzx    rdx, word  ptr [rsi+2*rdx]
+       mov      r11d, r9d
+       add      r11, 2
+       mov      edi, eax
+       cmp      r11, rdi
+       ja       G_M000_IG12
+       mov      eax, r9d
+       add      rax, rcx
+       mov      word  ptr [rax], dx
+       jmp      SHORT G_M000_IG10
+       align    [2 bytes for IG07]
+
+G_M000_IG06:                ;; offset=0x00B4
+       mov      rsi, 0x20B78926530
+       mov      edi, eax
+
+G_M000_IG07:                ;; offset=0x00C0
+       add      r9d, -2
+       mov      rbp, 0x28F5C28F5C28F5C3
+       mov      rdx, r11
+       shr      rdx, 2
+       mulx     rdx, rdx, rbp
+       shr      rdx, 2
+       imul     rbp, rdx, 100
+       sub      r11, rbp
+       cmp      r11d, 100
+       jae      G_M000_IG13
+       mov      r11d, r11d
+       movzx    r11, word  ptr [rsi+2*r11]
+       mov      ebp, r9d
+       lea      r14, [rbp+0x02]
+       cmp      r14, rdi
+       ja       SHORT G_M000_IG12
+       add      rbp, rcx
+       mov      word  ptr [rbp], r11w
+       cmp      rdx, 100
+       jb       G_M000_IG05
+
+G_M000_IG08:                ;; offset=0x0115
+       mov      r11, rdx
+       jmp      SHORT G_M000_IG07
+
+G_M000_IG09:                ;; offset=0x011A
+       dec      r9d
+       cmp      r9d, eax
+       jae      SHORT G_M000_IG13
+       mov      eax, r9d
+       add      r11d, 48
+       mov      byte  ptr [rcx+rax], r11b
+
+G_M000_IG10:                ;; offset=0x012D
+       add      r8d, r10d
+       mov      dword ptr [rbx+0x08], r8d
+       mov      r8d, r10d
+       mov      edx, 48
+       mov      rax, 0x7FF7B3F55F98
+       call     [rax]System.SpanHelpers:LastIndexOfValueType[byte,System.SpanHelpers+Negate`1[byte]](byref,byte,int):int
+       inc      eax
+       mov      rcx, qword ptr [rbx]
+       movsxd   rdx, eax
+       mov      byte  ptr [rcx+rdx], 0
+       mov      dword ptr [rbx+0x0C], eax
+
+G_M000_IG11:                ;; offset=0x0157
+       add      rsp, 32
+       pop      rbx
+       pop      rbp
+       pop      rsi
+       pop      rdi
+       pop      r14
+       ret
+
+G_M000_IG12:                ;; offset=0x0162
+       mov      rax, 0x7FF7B3F54D98
+       call     [rax]System.ThrowHelper:ThrowArgumentOutOfRangeException()
+       int3
+
+G_M000_IG13:                ;; offset=0x016F
+       call     CORINFO_HELP_RNGCHKFAIL
+       int3
+
+; Total bytes of code 373
