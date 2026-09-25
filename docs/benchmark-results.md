@@ -2,17 +2,17 @@
 
 ## Current shortest-decomposition comparison
 
-This comparison uses the caller-side scaling source at [revision `1e600aa`](https://github.com/akeit0/ZmijSharp/tree/1e600aa1ddebcd65bea2fc2b34427b2f389756de). It measures canonical `(significand, exponent)` production for finite, nonzero `double` values. Digit writing and text presentation are excluded. The comparison port specializes [#131068 at `56ff8516`](../src/UnroundedScaling.Comparison/SOURCE.md) for `double`; these are standalone assemblies, not matched CoreLib builds.
+This comparison uses the nonzero-last-digit fast path at [revision `d0ee1bc`](https://github.com/akeit0/ZmijSharp/tree/d0ee1bc). It measures canonical `(significand, exponent)` production for finite, nonzero `double` values. Digit writing and text presentation are excluded. The comparison port specializes [#131068 at `56ff8516`](../src/UnroundedScaling.Comparison/SOURCE.md) for `double`; these are standalone assemblies, not matched CoreLib builds.
 
 Windows 11 x64, .NET SDK `11.0.100-rc.1.26425.128`, .NET 11 RC X64 RyuJIT AVX2, BenchmarkDotNet 0.14.0 ShortRun. Each corpus contains 10,000 deterministic values. Each Żmij profile and its UnroundedScaling control ran in the same launch; compact and full were separate launches. Setup checked equal canonical tuples. Means are ns/value from three measured iterations after three warmups; lower is better. No managed allocations were reported.
 
 | Corpus | Żmij compact | UnroundedScaling, compact launch | Żmij full | UnroundedScaling, full launch |
 |---|---:|---:|---:|---:|
-| Simple values | 19.033 | 15.524 | 15.493 | 15.161 |
-| Varied long significands | 8.510 | 6.585 | 6.177 | 6.632 |
-| Random raw IEEE bits | 10.915 | 8.934 | 6.760 | 8.764 |
+| Simple values | 18.889 | 15.401 | 15.539 | 15.171 |
+| Varied long significands | 8.105 | 6.541 | 5.752 | 6.647 |
+| Random raw IEEE bits | 10.124 | 9.043 | 6.232 | 8.787 |
 
-Compact Żmij was slower than the local port on these corpora. In one full-cache launch, Żmij was faster on varied long significands and random bits and close on simple values. The full cache adds 9,058 source-data bytes and 8,192 B to the minimal DLL versus compact. The [session record](benchmark-sessions/current-cache-comparison-short.md) has the input method and reproduction command; [size and assembly](size-and-assembly.md) keeps data, DLL, and native-code counts separate.
+Compact Żmij was slower than the local port on these corpora. In the full-cache launch, Żmij was faster on varied long significands and random bits and close on simple values. The full cache adds 9,058 source-data bytes and 8,192 B to the minimal DLL versus compact. The [session record](benchmark-sessions/nonzero-last-digit-short.md) has the A/B results and reproduction command; [size and assembly](size-and-assembly.md) keeps data, DLL, and native-code counts separate.
 
 These measurements isolate local decomposition cost. They do not establish complete formatting speed or predict a CoreLib result. Earlier standalone `Span<char>` comparisons used different digit-staging paths, and their historical long-significand corpus repeated one value due to a generator error. Their timing rows are omitted from this current summary.
 
