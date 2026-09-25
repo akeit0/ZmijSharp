@@ -20,6 +20,8 @@ The separate paired comparison runs at the retained revision measured both produ
 
 The compact minimal DLL remains 12,288 B and the full one 20,480 B. With tiering disabled, x64 RyuJIT emits 606 B for `ToDecimal(double)` in compact and 427 B in full, up from 576 B and 399 B. The private scale-and-round method remains 486 B. The entry's nonzero-digit branch returns before the reciprocal-multiply `% 10` loop; the loop remains for zero or absent extra digits. The extra native bytes do not change the PE lengths.
 
+A subsequent [raw-constructor refactor at `61b47a6`](https://github.com/akeit0/ZmijSharp/tree/61b47a6) moved normalization into `ZmijDecimal.CreateNormalized`. The fast path now constructs the already canonical tuple directly. The compact and full x64 `ToDecimal(double)` listings match the measured version instruction for instruction after normalizing embedded addresses; only JIT inline-summary comments differ. The minimal DLL lengths are also unchanged. A compact ShortRun of that refactor measured 8.431 / 10.592 / 18.644 ns/value for long / random / simple inputs; these one-run differences are not evidence of a generated-code improvement.
+
 Both profiles passed 11 unit tests and produced the same digits-and-scale SHA-256 digest over 249,884 finite nonzero inputs as the pinned port: `14EDF7E7D588C49697EB4AF85A8F803C564A008A73A25029FC5941A198D1BCCF`. The compact profile also passed a two-million-pattern plus exponent-boundary comparison.
 
 Reproduce the paired compact run:
