@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <PackageId>ZmijSharp</PackageId>
+    <Description>.NET-compatible shortest IEEE-754 formatting for float and double, using a Schubfach/Zmij-style fixed-width conversion core.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="ZmijSharp.Benchmarks" />
+    <InternalsVisibleTo Include="ZmijSharp.JitDisasm" />
+    <InternalsVisibleTo Include="ZmijSharp.RuntimeShim" />
+    <InternalsVisibleTo Include="ZmijSharp.Tests" />
+    <InternalsVisibleTo Include="ZmijSharp.Verify" />
+    <InternalsVisibleTo Include="UnroundedScaling.Comparison" />
+  </ItemGroup>
+  <!-- Cache profiles: see docs/size-and-assembly.md. Default is the compact cache;
+       /p:ZmijCache=Full selects the full power table. -->
+  <PropertyGroup Condition="$(ZmijCache) == 'Full'">
+    <DefineConstants>$(DefineConstants);ZMIJ_FULL_TABLE</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="!$(DefineConstants.Contains('ZMIJ_FULL_TABLE'))">
+    <Compile Remove="Pow10Tables.cs" />
+  </ItemGroup>
+  <ItemGroup Condition="$(DefineConstants.Contains('ZMIJ_FULL_TABLE'))">
+    <Compile Remove="CompactPow10Cache.cs" />
+  </ItemGroup>
+</Project>

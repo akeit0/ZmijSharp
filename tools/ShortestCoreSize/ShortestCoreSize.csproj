@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <AssemblyName>Shortest.Core</AssemblyName>
+    <ShortestCore Condition="'$(ShortestCore)' == ''">Zmij</ShortestCore>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(ShortestCore)' == 'Zmij'">
+    <Compile Include="../../src/ZmijSharp/ZmijCore.cs" Link="ZmijCore.cs" />
+    <Compile Include="../../src/ZmijSharp/ZmijDecimal.cs" Link="ZmijDecimal.cs" />
+    <Compile Include="../../src/ZmijSharp/CompactPow10Cache.cs" Link="CompactPow10Cache.cs" />
+    <Compile Include="ZmijDigits.cs" />
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(ShortestCore)' == 'Unrounded'">
+    <DefineConstants>$(DefineConstants);SHORTEST_ONLY</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(ShortestCore)' == 'Unrounded'">
+    <Compile Include="../../src/UnroundedScaling.Comparison/PortableTypes.cs" Link="PortableTypes.cs" />
+    <Compile Include="../../src/UnroundedScaling.Comparison/Reference/UnroundedScaling.cs" Link="UnroundedScaling.cs" />
+    <Compile Include="../../src/UnroundedScaling.Comparison/Reference/Pow10Table.cs" Link="Pow10Table.cs" />
+    <Compile Include="UnroundedDigits.cs" />
+  </ItemGroup>
+
+  <Target Name="ValidateShortestCore" BeforeTargets="CoreCompile" Condition="'$(ShortestCore)' != 'Zmij' and '$(ShortestCore)' != 'Unrounded'">
+    <Error Text="ShortestCore must be Zmij or Unrounded." />
+  </Target>
+</Project>

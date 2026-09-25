@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net11.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/ZmijSharp/ZmijSharp.csproj" />
+    <ProjectReference Include="../../src/ZmijSharp.RuntimeShim/ZmijSharp.RuntimeShim.csproj" />
+    <ProjectReference Include="../../src/UnroundedScaling.Comparison/UnroundedScaling.Comparison.csproj" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
+  </ItemGroup>
+</Project>

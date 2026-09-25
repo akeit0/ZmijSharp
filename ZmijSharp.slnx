@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="src/ZmijSharp/ZmijSharp.csproj" />
+  <Project Path="src/ZmijSharp.RuntimeShim/ZmijSharp.RuntimeShim.csproj" />
+  <Project Path="src/UnroundedScaling.Comparison/UnroundedScaling.Comparison.csproj" />
+  <Project Path="tests/ZmijSharp.Tests/ZmijSharp.Tests.csproj" />
+  <Project Path="tests/ZmijSharp.Verify/ZmijSharp.Verify.csproj" />
+  <Project Path="benchmarks/ZmijSharp.Benchmarks/ZmijSharp.Benchmarks.csproj" />
+  <Project Path="tools/ZmijSharp.JitDisasm/ZmijSharp.JitDisasm.csproj" />
+</Solution>
