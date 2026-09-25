@@ -1,6 +1,6 @@
 // Source: https://github.com/dotnet/runtime/pull/131068
-// Source snapshot: https://github.com/PranavSenthilnathan/runtime/commit/50ef2d06d59f83760206ebcf59268dccdce45e1d
-// This file does not use System.Private.CoreLib implementation types.
+// Source snapshot: https://github.com/dotnet/runtime/blob/56ff851680b3c64a9ecaf543225b9cc948fe0262/src/libraries/System.Private.CoreLib/src/System/Number.Pow10Table.cs
+// The 1,392 cached-power words are identical to this pinned source.
 
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.

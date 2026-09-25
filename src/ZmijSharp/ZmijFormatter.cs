@@ -144,10 +144,9 @@ public static class ZmijFormatter
         return TryWriteChar(digits[..digitCount], scale, dec.IsNegative, dst, out written, spec, info, isFloat);
     }
 
-    // Presentation half of TryFormatChar, shared by the comparison-only
-    // UnroundedScaling formatter so the measured Zmij-vs-UnroundedScaling
-    // delta isolates decomposition cost. Pure code motion: the public path
-    // above calls it with identical arguments.
+    // Presentation half of TryFormatChar, shared by the comparison formatter.
+    // Each path still prepares its digits differently, so complete-format
+    // benchmarks include digit writing as well as decimal decomposition.
     internal static bool TryWriteChar(ReadOnlySpan<char> digits, int scale, bool negative, Span<char> dst, out int written,
         FormatSpec spec, NumberFormatInfo info, bool isFloat)
     {

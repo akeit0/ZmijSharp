@@ -16,7 +16,7 @@ The remaining provenance and repeated-measurement tasks do not require a `dotnet
 
 ## 2. Ask for scope before implementing a runtime patch
 
-Post the [proposal](proposal.md) as a `dotnet/runtime` issue with [#131068](https://github.com/dotnet/runtime/pull/131068) linked. The decision sought is whether maintainers want to evaluate the narrower shortest-producer experiment and which baseline to use. If #131068 lands first, compare against it. Do not present the older local `UnroundedScaling.Comparison` snapshot as the current PR.
+Post the [proposal](proposal.md) as a `dotnet/runtime` issue with [#131068](https://github.com/dotnet/runtime/pull/131068) and [#134621](https://github.com/dotnet/runtime/issues/134621) linked. The decision sought is whether maintainers want to evaluate the narrower shortest-producer experiment and which baseline to use. The local `UnroundedScaling.Comparison` project specializes pinned #131068 source for `double`; its measurements remain local-port evidence rather than matched CoreLib results.
 
 The initial experiment should change **only finite, unconstrained shortest `float`/`double` digit production**. Its output is digits and scale consumed by CoreLib's existing `NumberBuffer` and presentation path. Preserve existing handling for counted precision, other formats, cultures, non-finite values, and failed destination writes. The standalone `ZmijFormatter`, `RuntimeShim`, and comparison project are test infrastructure, not proposed runtime components.
 
@@ -42,7 +42,7 @@ The follow-up PR is justified only if correctness and compatibility hold and the
 | Cache profile | Compact is the candidate; full table is a local reconstruction diagnostic | Matched CoreLib size/performance results exist |
 | Counted precision | Delegate to the runtime in this repository | A separate fixed-width implementation is proposed and measured |
 | Direct output | No retained local variant | Complete-path CoreLib evidence shows a gain |
-| #131068 baseline | Current local port is an older snapshot | A current matched runtime comparison is available |
+| #131068 baseline | Local `double` port is pinned to PR head `56ff8516`; matched CoreLib comparison remains open | A current matched runtime comparison is available |
 | `Half`/`BFloat16` | Outside the initial Zmij candidate; #131068 shares its cached-power table across all four types | Maintainers request a four-type candidate |
 
 Update the [evidence record](evidence.md) only when a check has actually run; update this plan when the next action or decision changes.

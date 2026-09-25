@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ImplicitUsings>enable</ImplicitUsings>
+    <NoWarn>$(NoWarn);CS0649</NoWarn>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <AssemblyName>Shortest.Core</AssemblyName>
     <ShortestCore Condition="'$(ShortestCore)' == ''">Zmij</ShortestCore>

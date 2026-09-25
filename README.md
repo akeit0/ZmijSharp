@@ -2,7 +2,7 @@
 
 ZmijSharp is an experimental C# implementation of shortest decimal formatting for IEEE 754 `float` and `double`. It explores whether a fixed-width Żmij/Schubfach-style converter and a compact power-of-ten cache could improve .NET's formatting path. This repository is a test bed for a possible [`dotnet/runtime` proposal](docs/proposal.md), not a runtime patch or a new .NET API proposal.
 
-The work overlaps with [dotnet/runtime#131068](https://github.com/dotnet/runtime/pull/131068), which proposes unrounded scaling for floating-point formatting. The issue proposal focuses on an alternative shortest digit producer; direct destination writing is a separate possible experiment. The local comparison project uses a [pinned snapshot](src/UnroundedScaling.Comparison/SOURCE.md) of that PR, so its results do not describe later PR revisions.
+The work overlaps with [dotnet/runtime#131068](https://github.com/dotnet/runtime/pull/131068), which proposes unrounded scaling for floating-point formatting, and [the Ryu proposal #134621](https://github.com/dotnet/runtime/issues/134621). The issue proposal focuses on an alternative shortest digit producer. The local comparison project uses a [pinned `double` specialization](src/UnroundedScaling.Comparison/SOURCE.md) of #131068 at `56ff8516`; it is not a matched CoreLib build or a measurement of later PR revisions.
 
 ## Proposal and work plan
 
@@ -20,7 +20,7 @@ The proposal describes **what to show**; the plan records **what to do next**. N
 | Project | Purpose |
 |---|---|
 | [`src/ZmijSharp`](src/ZmijSharp) | Shortest converter, compact cache, and standalone `char`/invariant UTF-8 formatter for `float` and `double` |
-| [`src/UnroundedScaling.Comparison`](src/UnroundedScaling.Comparison) | `double`-only comparison port from a pinned #131068 snapshot, with the same local presentation code for complete-path comparisons |
+| [`src/UnroundedScaling.Comparison`](src/UnroundedScaling.Comparison) | `double`-only port of #131068 at `56ff8516`, with the same local presentation code for complete-path comparisons |
 | [`src/ZmijSharp.RuntimeShim`](src/ZmijSharp.RuntimeShim) | Limited runtime-shaped `double`/UTF-8 path for measuring conversion and formatting costs |
 | [`tests/ZmijSharp.Tests`](tests/ZmijSharp.Tests) | TUnit behavior and destination-buffer tests |
 | [`tests/ZmijSharp.Verify`](tests/ZmijSharp.Verify) | Runtime differential checks, independent `BigInteger` oracle, and long producer sweeps |
@@ -33,7 +33,7 @@ The optimized path covers default formatting, `G/g`, `G0/g0`, and `R/r` (includi
 
 - All 2³² binary32 patterns passed default invariant `char` output comparison with the installed runtime. Sampled and structured inputs also pass an independent shortest-decimal oracle.
 - A deterministic 100-million-pattern `double` sample passed default `char` and UTF-8 output comparison. A pinned upstream Żmij differential passed on one million random patterns per type plus exponent boundaries after trailing-zero normalization.
-- Local complete-path benchmarks show promising results on this Windows x64 machine, especially for raw-bit and long-significand inputs. A JSON-like corpus is roughly at parity. These results are not a head-to-head comparison on identical runtime builds with #131068.
+- In two local complete-path benchmark sessions, Zmij led the pinned #131068 `double` port on raw-bit and long-significand inputs; the port led on JSON-like values. Simple values changed order between sessions. These standalone results are not a comparison on identical CoreLib builds.
 - ARM64, ReadyToRun, NativeAOT, and CoreLib integration have not been measured here.
 
 For exact commands and coverage, see [completed evidence](docs/evidence.md). For methods, environment, and numbers, see [benchmark results](docs/benchmark-results.md). The [work plan](docs/plan.md) tracks what is still needed.

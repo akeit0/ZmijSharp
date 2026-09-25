@@ -1,6 +1,6 @@
 // Source: https://github.com/dotnet/runtime/pull/131068
-// Source snapshot: https://github.com/PranavSenthilnathan/runtime/commit/50ef2d06d59f83760206ebcf59268dccdce45e1d
-// This file does not use System.Private.CoreLib implementation types.
+// Source snapshot: https://github.com/dotnet/runtime/blob/56ff851680b3c64a9ecaf543225b9cc948fe0262/src/libraries/System.Private.CoreLib/src/System/Number.UnroundedScaling.cs
+// The upstream generic producer is specialized here for double; CoreLib-only types are adapted.
 
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
@@ -17,6 +17,7 @@ using System.Buffers.Text;
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace UnroundedScaling.Comparison;
 
@@ -199,21 +200,22 @@ internal static partial class UnroundedScaling
         int odd;
         int power;
 
-        // At a normal power of two, the lower neighbor uses the preceding binary
-        // exponent and is half as far away. Its lower midpoint is therefore only
-        // one quarter ulp below f.
-        if (((mantissa & ((1UL << 63) - 1)) == 0) && (exponent > minimumExponent))
+        if (exponent >= minimumExponent)
         {
-            power = -Skewed(exponent + zeroBits);
-            minimum = mantissa - (1UL << (zeroBits - 2));
-            maximum = mantissa + (1UL << (zeroBits - 1));
-            odd = (int)((mantissa >> zeroBits) & 1);
-        }
-        // Other normal values have symmetric half-ulp boundaries.
-        else if (exponent >= minimumExponent)
-        {
-            power = -Log10Pow2(exponent + zeroBits);
-            minimum = mantissa - (1UL << (zeroBits - 1));
+            // At a normal power of two, the lower neighbor uses the preceding binary
+            // exponent and is half as far away. Its lower midpoint is therefore only
+            // one quarter ulp below f.
+            bool hasCloserLowerBoundary =
+                ((mantissa & ((1UL << 63) - 1)) == 0)
+                && (exponent > minimumExponent);
+
+            power = hasCloserLowerBoundary
+                ? -Skewed(exponent + zeroBits)
+                : -Log10Pow2(exponent + zeroBits);
+
+            minimum = mantissa
+                - (1UL << (zeroBits - (hasCloserLowerBoundary ? 2 : 1)));
+
             maximum = mantissa + (1UL << (zeroBits - 1));
             odd = (int)((mantissa >> zeroBits) & 1);
         }
@@ -272,8 +274,8 @@ internal static partial class UnroundedScaling
 
         int digitCount = UnroundedFormatting.CountDigits(digits);
         Span<byte> destination = new(number.DigitsPtr, digitCount);
-        byte* start = UnroundedFormatting.UInt64ToDecChars(number.DigitsPtr, digits);
-        Debug.Assert(start == number.DigitsPtr);
+        int start = UnroundedFormatting.UInt64ToDecChars(destination, digitCount, digits);
+        Debug.Assert(start == 0);
 
         number.Scale = digitCount + decimalExponent;
         digitCount = destination.LastIndexOfAnyExcept((byte)'0') + 1;
@@ -294,8 +296,9 @@ internal static partial class UnroundedScaling
     {
         Debug.Assert((decimalExponent >= Pow10Min) && (decimalExponent <= Pow10Max));
 
-        int index = (decimalExponent - Pow10Min) * 2;
-        return new Scaler(Pow10Tab[index], Pow10Tab[index + 1], -(binaryExponent + Log2Pow10(decimalExponent) + 3));
+        ReadOnlySpan<CachedPower> cachedPowers = MemoryMarshal.Cast<ulong, CachedPower>(Pow10Tab);
+        CachedPower power = cachedPowers[decimalExponent - Pow10Min];
+        return new Scaler(power.High, power.Low, -(binaryExponent + Log2Pow10(decimalExponent) + 3));
     }
 
     // Multiplies value by the cached power high * 2^64 - low and returns the
@@ -340,6 +343,12 @@ internal static partial class UnroundedScaling
 
     // Floor(log10(3/4 * 2^x)).
     private static int Skewed(int value) => ((value * 631305) - 261663) >> 21;
+
+    private readonly struct CachedPower
+    {
+        public readonly ulong High;
+        public readonly ulong Low;
+    }
 
     private readonly struct Scaler
     {

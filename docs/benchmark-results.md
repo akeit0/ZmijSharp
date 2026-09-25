@@ -1,16 +1,16 @@
 # Local benchmark results
 
-These are measurements of standalone assemblies on one Windows x64 machine, not matched `dotnet/runtime` builds. The workload session below ran on 2026-09-25. The [initial public revision](https://github.com/akeit0/ZmijSharp/tree/f8934e272bf71e579cf79492db011cd3aac02c12) contains the measured implementation; intervening edits changed only documentation and a source attribution comment. The local unrounded-scaling comparison assembly adapts a [#131068 source snapshot at `50ef2d06`](../src/UnroundedScaling.Comparison/SOURCE.md); the PR head had advanced to `56ff8516` when this report was updated. Do not quote these rows as a measured win over the current PR or as a projected CoreLib result.
+These are measurements of standalone assemblies on one Windows x64 machine, not matched `dotnet/runtime` builds. The workload session below ran on 2026-09-25 with a local `double` specialization of [#131068 PR head `56ff8516`](../src/UnroundedScaling.Comparison/SOURCE.md). The Zmij implementation is unchanged from the initial public revision. The local port uses the pinned PR's shortest algorithm and power table and byte-specializes its existing CoreLib digit helpers. These rows compare local implementations; they do not measure the PR's CoreLib integration or project its performance there.
 
 ## Environment and method
 
 - Windows 11 x64 (build `10.0.26200.9457`), .NET SDK `11.0.100-rc.1.26425.128`, installed runtime reported by BenchmarkDotNet as `.NET 11.0.0 (11.0.26.42628)`, X64 RyuJIT AVX2. BenchmarkDotNet reported the processor as unknown.
-- BenchmarkDotNet 0.14.0, `--job Short`: one launch, three warmup and three measured iterations. `OperationsPerInvoke = 10_000` normalizes each batch to one value.
-- Each table below was measured in one session on the same deterministic 10,000-value corpus. Values are raw IEEE patterns for `Random`, cycling common values for `Simple` and `JsonLike`, long-significand cases, or extremes. The source is [`WorkloadBenchmarks.cs`](../benchmarks/ZmijSharp.Benchmarks/WorkloadBenchmarks.cs).
+- BenchmarkDotNet 0.14.0, `--job Short`: one launch, three warmup and three measured iterations per session. `OperationsPerInvoke = 10_000` normalizes each batch to one value. Two separate sessions on the same code state are preserved as [session 1](benchmark-sessions/pr-56ff8516-short-1.md) and [session 2](benchmark-sessions/pr-56ff8516-short-2.md). Ranges below show the two session means, not a confidence interval.
+- Each session used the same deterministic 10,000-value corpora. Values are raw IEEE patterns for `Random`, cycling common values for `Simple` and `JsonLike`, long-significand cases, or extremes. The source is [`WorkloadBenchmarks.cs`](../benchmarks/ZmijSharp.Benchmarks/WorkloadBenchmarks.cs). The current PR port passed a separate 2,000,000-pattern and binary-exponent-boundary digits, round-trip, and formatted-output check before these runs.
 - Complete `TryFormat` rows format into preallocated `Span<char>` buffers. The two significant-digit rows only produce digits and scale. They are diagnostics and must not share a speed ratio with complete formatting.
-- Allocations measured zero for every row in the workload session. The short job is directional; near-parity results need repeated, controlled runs before a performance claim.
+- Allocations measured zero for every row in both sessions. These two short sessions are directional and did not include an unchanged integer control; near-parity results need a stronger measurement before a performance claim.
 
-Reproduce the workload session:
+Reproduce a workload session:
 
 ```bash
 dotnet run -c Release --project benchmarks/ZmijSharp.Benchmarks -- --job Short --filter "*WorkloadBenchmarks*"
@@ -18,29 +18,29 @@ dotnet run -c Release --project benchmarks/ZmijSharp.Benchmarks -- --job Short -
 
 ## Complete shortest `double` formatting
 
-All values and methods in each row use the same workload. Ratio is Zmij time divided by runtime time. The comparison assembly uses the same local presentation writer as Zmij, which helps isolate the effect of their digit producers but is not CoreLib's current writer.
+All values and methods in each row use the same workload. The two local implementations share fixed/scientific presentation code but differ in decimal decomposition and digit writing; the installed runtime uses its own formatter. Values are ns per formatted value.
 
-| Corpus | Runtime `TryFormat` | Zmij `TryFormat` | Ratio | Snapshot unrounded scaling `TryFormat` |
-|---|---:|---:|---:|---:|
-| Simple | 33.68 ns | 27.97 ns | 0.83 | 39.82 ns |
-| JsonLike | 31.02 ns | 30.22 ns | 0.97 | 39.53 ns |
-| LongSignificand | 65.92 ns | 24.51 ns | 0.37 | 44.81 ns |
-| Random | 90.41 ns | 45.38 ns | 0.50 | 63.32 ns |
-| Extreme | 50.03 ns | 29.23 ns | 0.58 | 39.32 ns |
+| Corpus | Runtime `TryFormat` | #131068 local `TryFormat` | Zmij `TryFormat` |
+|---|---:|---:|---:|
+| Simple | 33.25–34.77 ns | 27.41–30.34 ns | 27.95–30.17 ns |
+| JsonLike | 30.36–30.61 ns | 28.08–28.68 ns | 29.93–30.10 ns |
+| LongSignificand | 64.91–66.31 ns | 33.57–39.79 ns | 24.40–24.68 ns |
+| Random | 88.58–89.46 ns | 49.82–51.38 ns | 44.72–45.48 ns |
+| Extreme | 49.03–49.51 ns | 29.83–30.89 ns | 29.08–29.18 ns |
 
-`JsonLike` is effectively parity at this level of measurement. The raw-bit and long-significand distributions produce the largest local gaps; they do not represent an average application's value mix. The complete Zmij path differs from CoreLib in parsing and presentation as well as conversion, so these ratios do not isolate the producer's contribution to a runtime patch.
+The pinned #131068 port led on `JsonLike` in both sessions; Zmij led on `LongSignificand` and `Random` in both. `Simple` changed order between sessions, and `Extreme` had a small Zmij lead. The raw-bit and long-significand distributions do not represent an average application's value mix. These results cannot rank the two algorithms in CoreLib.
 
 ## Digits and scale only
 
-These methods are directly comparable to each other as local producer adapters; they do not include presentation. The snapshot unrounded-scaling adapter is `double` only and rejects zero/non-finite inputs, while Zmij handles zero in its producer. The raw-bit corpus contains very few such values. A prior 2,000,000-pattern audit found identical normalized digits and scale from both adapters on its sampled finite nonzero cases.
+These methods produce digits and scale without complete presentation. The pinned #131068 port is `double` only and skips zero/non-finite inputs, while Zmij handles zero in its producer; `Simple` and `JsonLike` include zero, so those rows do not exercise identical input work. The raw-bit corpus contains very few such values. A fresh 2,000,000-pattern audit found identical normalized digits and scale from both adapters on its sampled finite nonzero cases.
 
-| Corpus | Zmij | Snapshot unrounded scaling |
+| Corpus | Zmij | #131068 local port |
 |---|---:|---:|
-| Simple | 20.16 ns | 25.21 ns |
-| JsonLike | 21.70 ns | 28.03 ns |
-| LongSignificand | 17.48 ns | 30.96 ns |
-| Random | 24.70 ns | 34.59 ns |
-| Extreme | 19.09 ns | 24.64 ns |
+| Simple | 20.11–20.17 ns | 15.47–15.92 ns |
+| JsonLike | 21.82–21.86 ns | 16.42–16.73 ns |
+| LongSignificand | 17.41–17.57 ns | 18.46–18.96 ns |
+| Random | 24.36–24.44 ns | 21.45–23.05 ns |
+| Extreme | 19.16–19.17 ns | 15.95–16.48 ns |
 
 ## Optimization experiments
 
@@ -50,7 +50,7 @@ The temporary `BigInteger` counted-precision path was a poor fit for this librar
 
 ## Size
 
-The [size and assembly record](size-and-assembly.md) uses one minimal `double` shortest-producer project for both algorithms, excluding the standalone formatter. Its Release DLLs are 11,776 B for compact Zmij and 18,944 B for the older unrounded-scaling snapshot. It separates these PE lengths from counted source data and x64 JIT code. [`verify_compact_cache.py`](../tools/verify_compact_cache.py) re-derives all 618 compact entries with exact integers.
+The [size and assembly record](size-and-assembly.md) uses one minimal `double` shortest-producer project for both algorithms, excluding the standalone formatter. Its Release DLLs are 11,776 B for compact Zmij and 19,968 B for the pinned #131068 local port. It separates these PE lengths from counted source data and x64 JIT code. [`verify_compact_cache.py`](../tools/verify_compact_cache.py) re-derives all 618 compact entries with exact integers.
 
 ## Consumer benchmark limit
 
