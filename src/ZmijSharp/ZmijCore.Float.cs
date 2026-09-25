@@ -31,40 +31,39 @@ internal static partial class ZmijCore
             binSig |= FloatImplicitBit;
         }
 
-        DecimalResult dec = ToDecimalFloat(binSig ^ FloatImplicitBit, binExp, binSig != 0);
+        int adjustedBinExp = binExp - FloatExponentOffset;
+        int decimalExp = ComputeDecimalExponent(adjustedBinExp, binSig != 0);
+        int shift = ComputeExponentShift(adjustedBinExp, decimalExp + 1) + ExtraShift;
+        GetPowerOf10(-decimalExp - 1, out ulong powHigh, out ulong powLow);
+        DecimalResult dec = ToDecimalFloat(binSig ^ FloatImplicitBit, decimalExp, shift, powHigh, powLow);
         ulong significand;
-        int decimalExponent;
+        int resultExponent;
         if (dec.HasLastDigit)
         {
             significand = dec.Significand * 10 + (uint)dec.LastDigit;
-            decimalExponent = dec.Exponent;
+            resultExponent = dec.Exponent;
         }
         else
         {
             significand = dec.Significand;
-            decimalExponent = dec.Exponent + 1;
+            resultExponent = dec.Exponent + 1;
         }
-        return new ZmijDecimal(significand, decimalExponent, negative);
+        return new ZmijDecimal(significand, resultExponent, negative);
     }
 
-    private static DecimalResult ToDecimalFloat(uint binSig, int rawExp, bool regular)
+    private static DecimalResult ToDecimalFloat(uint binSig, int decimalExp, int shift, ulong powHigh, ulong powLow)
     {
-        int binExp = rawExp - FloatExponentOffset;
-        if (!regular)
+        if (binSig == FloatImplicitBit)
         {
-            Debug.Assert(binSig == FloatImplicitBit);
-            int decExp = ComputeDecimalExponent(binExp, regular: false);
-            int irregularShift = ComputeExponentShift(binExp, decExp + 1) + ExtraShift;
-            GetPowerOf10(-decExp - 1, out ulong irregularPow10High, out ulong irregularPow10Low);
-            int powerShift = FloatSignificandBits + irregularShift;
+            int powerShift = FloatSignificandBits + shift;
             Debug.Assert(powerShift is >= 27 and <= 30);
-            ulong irregularProductHigh = irregularPow10High >> (64 - powerShift);
-            ulong irregularProductLow = (irregularPow10High << powerShift)
-                | (irregularPow10Low >> (64 - powerShift));
+            ulong irregularProductHigh = powHigh >> (64 - powerShift);
+            ulong irregularProductLow = (powHigh << powerShift)
+                | (powLow >> (64 - powerShift));
 
             ulong integral = irregularProductHigh >> ExtraShift;
             ulong fractional = (irregularProductHigh << (64 - ExtraShift)) | (irregularProductLow >> ExtraShift);
-            ulong halfUlp = irregularPow10High >> (ExtraShift + 1 - irregularShift);
+            ulong halfUlp = powHigh >> (ExtraShift + 1 - shift);
             bool roundUp = halfUlp > ulong.MaxValue - fractional;
             bool roundDown = (halfUlp >> 1) > fractional;
             integral += roundUp ? 1UL : 0UL;
@@ -74,21 +73,18 @@ internal static partial class ZmijCore
             if (digit < lo)
                 digit = lo;
 
-            return new DecimalResult(integral, decExp, digit, !roundUp && !roundDown);
+            return new DecimalResult(integral, decimalExp, digit, !roundUp && !roundDown);
         }
 
-        int decimalExp = ComputeDecimalExponent(binExp);
-        int shift = ComputeExponentShift(binExp, decimalExp + 1) + ExtraShift;
         ulong even = 1UL - (binSig & 1U);
 
         const int floatExtraShift = 34;
         shift += floatExtraShift - ExtraShift;
-        GetPowerOf10(-decimalExp - 1, out ulong pow10High, out _);
-        ulong product = Math.BigMul(pow10High + 1, (ulong)binSig << shift, out _);
+        ulong product = Math.BigMul(powHigh + 1, (ulong)binSig << shift, out _);
 
         ulong integralPart = product >> floatExtraShift;
         ulong fractionalPart = product & ((1UL << floatExtraShift) - 1);
-        ulong halfUlpRegular = (pow10High >> (65 - shift)) + even;
+        ulong halfUlpRegular = (powHigh >> (65 - shift)) + even;
         bool roundUpRegular = ((fractionalPart + halfUlpRegular) >> floatExtraShift) != 0;
         bool roundDownRegular = halfUlpRegular > fractionalPart;
         integralPart += roundUpRegular ? 1UL : 0UL;
