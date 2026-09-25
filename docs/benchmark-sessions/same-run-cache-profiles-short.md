@@ -1,6 +1,6 @@
 # Compact, full, and #131068 shortest-decomposition comparison
 
-Windows 11 x64, .NET SDK `11.0.100-rc.1.26425.128`, .NET 11 RC X64 RyuJIT AVX2, BenchmarkDotNet 0.14.0 ShortRun. The [benchmark class](../../benchmarks/ZmijSharp.Benchmarks/CacheProfileDecompositionBenchmarks.cs) uses the [shared input generator](../../benchmarks/ZmijSharp.Benchmarks/ComponentBenchmarks.cs). The [full-cache project](../../benchmarks/ZmijSharp.Full/ZmijSharp.Full.csproj) source-links the same Żmij conversion files with `ZMIJ_FULL_TABLE` defined and has a distinct assembly name. An `extern alias` lets the benchmark call compact and full implementations in the same build. The pinned [#131068 local port](../../src/UnroundedScaling.Comparison/SOURCE.md) is the third producer.
+Windows 11 x64, .NET SDK `11.0.100-rc.1.26425.128`, .NET 11 RC X64 RyuJIT AVX2, BenchmarkDotNet 0.14.0 ShortRun. The [benchmark class](../../benchmarks/ZmijSharp.Benchmarks/ShortestDecompositionComparisonBenchmarks.cs) uses the [shared input generator](../../benchmarks/ZmijSharp.Benchmarks/ComponentBenchmarks.cs). The [full-cache project](../../benchmarks/ZmijSharp.Full/ZmijSharp.Full.csproj) source-links the same Żmij conversion files with `ZMIJ_FULL_TABLE` defined and has a distinct assembly name. An `extern alias` lets the benchmark call compact and full implementations in the same build. The pinned [#131068 local port](../../src/UnroundedScaling.Comparison/SOURCE.md) is the third producer. This session used the class's former name, `CacheProfileDecompositionBenchmarks`.
 
 One BenchmarkDotNet command measured all nine cases. Each case had its own benchmark process launch, three warmups, and three measured iterations. Each corpus has 10,000 deterministic finite nonzero `double` values. Setup checked that all three producers returned the same canonical significand and exponent for each value. Means are ns/value; no managed allocations were reported.
 
@@ -15,5 +15,5 @@ The source was measured at [`d932eda`](https://github.com/akeit0/ZmijSharp/tree/
 Reproduce from the repository root with the default compact `ZmijSharp` project configuration:
 
 ```powershell
-dotnet run -c Release --project benchmarks/ZmijSharp.Benchmarks -- --job Short --filter "CacheProfileDecompositionBenchmarks*"
+dotnet run -c Release --project benchmarks/ZmijSharp.Benchmarks -- --job Short --filter "ShortestDecompositionComparisonBenchmarks*"
 ```

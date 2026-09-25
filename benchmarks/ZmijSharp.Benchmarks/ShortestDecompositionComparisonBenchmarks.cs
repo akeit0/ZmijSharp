@@ -8,7 +8,7 @@ using UnroundedCore = UnroundedScaling.Comparison.UnroundedScaling;
 // The full cache is source-linked into a separate assembly so all three
 // producers can be measured over the same corpus in one BenchmarkDotNet run.
 [MemoryDiagnoser]
-public class CacheProfileDecompositionBenchmarks
+public class ShortestDecompositionComparisonBenchmarks
 {
     private double[] _values = [];
 
