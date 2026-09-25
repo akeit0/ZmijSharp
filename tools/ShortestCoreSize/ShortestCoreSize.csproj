@@ -14,8 +14,17 @@
   <ItemGroup Condition="'$(ShortestCore)' == 'Zmij'">
     <Compile Include="../../src/ZmijSharp/ZmijCore.cs" Link="ZmijCore.cs" />
     <Compile Include="../../src/ZmijSharp/ZmijDecimal.cs" Link="ZmijDecimal.cs" />
-    <Compile Include="../../src/ZmijSharp/CompactPow10Cache.cs" Link="CompactPow10Cache.cs" />
     <Compile Include="ZmijDigits.cs" />
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(ShortestCore)' == 'Zmij' and '$(ZmijCache)' == 'Full'">
+    <DefineConstants>$(DefineConstants);ZMIJ_FULL_TABLE</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(ShortestCore)' == 'Zmij' and '$(ZmijCache)' == 'Full'">
+    <Compile Include="../../src/ZmijSharp/Pow10Tables.cs" Link="Pow10Tables.cs" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(ShortestCore)' == 'Zmij' and '$(ZmijCache)' != 'Full'">
+    <Compile Include="../../src/ZmijSharp/CompactPow10Cache.cs" Link="CompactPow10Cache.cs" />
   </ItemGroup>
 
   <PropertyGroup Condition="'$(ShortestCore)' == 'Unrounded'">

@@ -20,6 +20,8 @@ The compact cache reconstructs 618 cached powers. The same minimal, presentation
 
 The #131068 [power table](https://github.com/dotnet/runtime/blob/56ff851680b3c64a9ecaf543225b9cc948fe0262/src/libraries/System.Private.CoreLib/src/System/Number.Pow10Table.cs) is shared across four types and bounded precision; the local DLL and JIT rows cover only its `double` shortest path. The DLL figures are PE file lengths, while the JIT figures are native instruction bytes. None is an incremental CoreLib size estimate. The Zmij JIT row includes [later code-size reductions](optimization-notes.md). For separate context, Grisu3 has **1,084 bytes** across its four source tables at [`dotnet/runtime` `f0df4333`](https://github.com/dotnet/runtime/blob/f0df4333553c63a6bdba26228ab94b99e4a1c8d1/src/libraries/System.Private.CoreLib/src/System/Number.Grisu3.cs). See the size and assembly record linked below for the counted arrays and method list.
 
+The [full-cache diagnostic](size-and-assembly.md#full-cache-diagnostic) makes the cache tradeoff visible. Replacing the 670-byte compact constants with a 9,888-byte direct table reduced local `double` decomposition from **8.924 to 6.118–6.148 ns/value** on varied long significands and from **11.502 to 7.460–7.561 ns/value** on random bits in alternating ShortRuns. The same minimal Zmij DLL grew from **11,776 to 20,480 B**. This is a local profile comparison, not a matched CoreLib result or a change to the compact candidate in the posted issue.
+
 ## Evidence available today
 
 - The default invariant `char` output matched the installed .NET 11 RC runtime for **all 2³² binary32 encodings**. A deterministic **100-million-pattern binary64** sample matched its default `char` and UTF-8 output.

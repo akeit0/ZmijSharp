@@ -5,12 +5,12 @@ $dll = Join-Path $PSScriptRoot 'ShortestCoreSize/bin/Release/net11.0/Shortest.Co
 
 $results = @{}
 foreach ($profile in @('Zmij', 'Unrounded')) {
-    & dotnet build -c Release $coreProject -t:Rebuild "-p:ShortestCore=$profile" -v:q
+    & dotnet build -c Release $coreProject -t:Rebuild "-p:ShortestCore=$profile" -p:ZmijCache=Compact -v:q
     if ($LASTEXITCODE -ne 0) { throw "Build failed for $profile." }
 
     $bytes = (Get-Item -LiteralPath $dll).Length
     $dllHash = (Get-FileHash -LiteralPath $dll -Algorithm SHA256).Hash
-    $output = & dotnet run -c Release --project $checkProject "-p:ShortestCore=$profile"
+    $output = & dotnet run -c Release --project $checkProject "-p:ShortestCore=$profile" -p:ZmijCache=Compact
     if ($LASTEXITCODE -ne 0) { throw "Output check failed for $profile." }
 
     $result = $output | Select-Object -Last 1

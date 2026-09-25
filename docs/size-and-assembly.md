@@ -20,11 +20,11 @@ Grisu3 is counted from [`Number.Grisu3.cs` at `dotnet/runtime` `f0df4333`](https
 
 The PR's [generic producer](https://github.com/dotnet/runtime/blob/56ff851680b3c64a9ecaf543225b9cc948fe0262/src/libraries/System.Private.CoreLib/src/System/Number.UnroundedScaling.cs) shares that table across `double`, `float`, `Half`, and `BFloat16`. **The 16-bit types add no separate cached-power data.** The [PR description](https://github.com/dotnet/runtime/pull/131068) attributes their additional size to native generic specializations. The 432 helper bytes above come from [existing CoreLib routines](../src/UnroundedScaling.Comparison/SOURCE.md), so they are counted in the isolated port but are not new data added by the PR. These counts exclude alignment, metadata, native code, and other formatter data. The port's bounded-precision helper also defines a 160-byte small-power table; that helper is excluded from the shortest-only DLL below.
 
-The optional full Zmij cache stores 618 pairs of `ulong` values (9,888 raw bytes). It is a build alternative used to study cache reconstruction, not a separate row in the DLL comparison. [`verify_compact_cache.py`](../tools/verify_compact_cache.py) checks all 618 compact reconstructions against exact arithmetic.
+The optional full Zmij cache stores 618 pairs of `ulong` values (9,888 raw bytes). It is a build alternative used to study cache reconstruction, not a separate row in the compact-versus-#131068 DLL comparison. [`verify_compact_cache.py`](../tools/verify_compact_cache.py) checks all 618 compact reconstructions against exact arithmetic.
 
 ## Comparable minimal DLLs
 
-[`ShortestCoreSize.csproj`](../tools/ShortestCoreSize/ShortestCoreSize.csproj) builds the same `Shortest.Core.dll` project twice. Each profile exposes the same `Digits.TryGetSignificantDigits(double, Span<byte>, out int, out int)` method and accepts finite, nonzero values with a 32-byte destination. Neither profile has a presentation writer or a project reference to the other. The Zmij profile source-links its `double` core, normalized decimal type, compact cache, and digit writer; its `float` code is in a separate file and is excluded. The unrounded profile source-links the pinned PR's shortest algorithm specialized for `double`, its identical power table, a local buffer/digit helper, and the adapter; `SHORTEST_ONLY` excludes bounded-precision code and its small-power table.
+[`ShortestCoreSize.csproj`](../tools/ShortestCoreSize/ShortestCoreSize.csproj) builds the same `Shortest.Core.dll` project twice. Each profile exposes the same `Digits.TryGetSignificantDigits(double, Span<byte>, out int, out int)` method and accepts finite, nonzero values with a 32-byte destination. Neither profile has a presentation writer or a project reference to the other. By default, the Zmij profile source-links its `double` core, normalized decimal type, compact cache, and digit writer; its `float` code is in a separate file and is excluded. The unrounded profile source-links the pinned PR's shortest algorithm specialized for `double`, its identical power table, a local buffer/digit helper, and the adapter; `SHORTEST_ONLY` excludes bounded-precision code and its small-power table.
 
 Windows x64, .NET SDK `11.0.100-rc.1.26425.128`, Release `net11.0`:
 
@@ -35,11 +35,24 @@ Windows x64, .NET SDK `11.0.100-rc.1.26425.128`, Release `net11.0`:
 
 Both assemblies are built by the same project settings and differ by **8,192 B** as PE files. The comparison is meaningful for these two isolated `double` shortest producers and their identical public adapter. The #131068 row is a local specialization of the pinned generic source with byte-specialized CoreLib helpers; it is not the PR's CoreLib image delta or a result for other types or bounded precision. PE section rounding, metadata, and IL are included in the file lengths.
 
-The [check program](../tools/ShortestCoreSize.Check/Program.cs) ran both builds over the same 250,000 deterministic raw patterns. Each accepted 249,884 finite nonzero values, round-tripped them, and produced the same digits-and-scale SHA-256 digest. Run the sequential build and check with:
+The [check program](../tools/ShortestCoreSize.Check/Program.cs) ran both compact Zmij and #131068 builds over the same 250,000 deterministic raw patterns. Each accepted 249,884 finite nonzero values, round-tripped them, and produced the same digits-and-scale SHA-256 digest. Run the sequential build and check with `./tools/measure-shortest-core.ps1`.
 
-```powershell
-./tools/measure-shortest-core.ps1
-```
+## Full-cache diagnostic
+
+The same Zmij minimal project can source-link either cache, with the same finite nonzero `double` adapter. Both profiles produced the same digits-and-scale SHA-256 digest over 249,884 inputs. Windows x64, Release `net11.0`:
+
+| Measure | Compact cache | Full cache |
+|---|---:|---:|
+| Cached-power source constants | 670 B | 9,888 B |
+| Minimal `Shortest.Core.dll` | 11,776 B | 20,480 B |
+| JIT `ToDecimal(ulong, int, bool)` | 1,065 B | 683 B |
+| Listed shortest call tree | 1,833 B | 1,451 B |
+
+In [alternating decomposition ShortRuns](benchmark-sessions/cache-profiles-decomposition.md), the full cache took **6.118–6.148 ns/value** for varied long significands and **7.460–7.561 ns/value** for random bits; the intervening compact session took **8.924** and **11.502 ns/value**. `Simple` took 15.637–15.942 ns with the full cache and 19.310 ns compact. The full table saves reconstruction work but adds **9,218 source-data bytes** and **8,704 B** to this minimal DLL. The timings cover the whole local canonical decomposition, not a separately timed cache lookup or a CoreLib build.
+
+On the regular path, the compact cache divides the power index into a 28-entry block, reads a minor and two anchor words, performs two 64-bit products, then normalizes and corrects the reconstructed pair. The full profile reads the pair directly. After either lookup, the converter still performs two 64-bit products for scaling and one for the extra digit, followed by rounding and the entry point's trailing-decimal-zero loop. The benchmark difference identifies the cache choice as a substantial cost in this implementation; it does not assign an exact nanosecond count to each operation.
+
+Rebuild and check the full minimal profile with `dotnet build -c Release tools/ShortestCoreSize/ShortestCoreSize.csproj -t:Rebuild -p:ShortestCore=Zmij -p:ZmijCache=Full`, then `dotnet run -c Release --project tools/ShortestCoreSize.Check -p:ShortestCore=Zmij -p:ZmijCache=Full`. Omit `-p:ZmijCache=Full` to return to the compact profile.
 
 ## JIT assembly for the same boundary
 
