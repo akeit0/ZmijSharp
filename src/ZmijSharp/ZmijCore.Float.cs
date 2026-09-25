@@ -22,7 +22,7 @@ internal static partial class ZmijCore
         if (binExp == 0 || binExp == FloatExponentMask)
         {
             if (binExp != 0)
-                return new ZmijDecimal(binSig, NonFiniteExponent, negative, normalize: false);
+                return new ZmijDecimal(binSig, NonFiniteExponent, negative);
 
             if (binSig == 0)
                 return new ZmijDecimal(0, 0, negative);
@@ -48,7 +48,7 @@ internal static partial class ZmijCore
             significand = dec.Significand;
             resultExponent = dec.Exponent + 1;
         }
-        return new ZmijDecimal(significand, resultExponent, negative);
+        return ZmijDecimal.CreateNormalized(significand, resultExponent, negative);
     }
 
     private static DecimalResult ToDecimalFloat(uint binSig, int decimalExp, int shift, ulong powHigh, ulong powLow)

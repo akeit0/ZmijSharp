@@ -1,13 +1,22 @@
+using System.Runtime.CompilerServices;
+
 namespace ZmijSharp;
 
 /// <summary>Shortest decimal decomposition: value = (-1)^sign * significand * 10^exponent.</summary>
 public readonly record struct ZmijDecimal
 {
-    // Production decompositions are canonical; the verifier can preserve an
-    // upstream raw tuple to identify trailing-zero representation differences.
-    internal ZmijDecimal(ulong significand, int exponent, bool isNegative, bool normalize = true)
+    // Callers use this directly only for canonical results or raw verification tuples.
+    internal ZmijDecimal(ulong significand, int exponent, bool isNegative)
     {
-        if (normalize && significand != 0)
+        Significand = significand;
+        Exponent = exponent;
+        IsNegative = isNegative;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static ZmijDecimal CreateNormalized(ulong significand, int exponent, bool isNegative)
+    {
+        if (significand != 0)
         {
             while (significand % 10 == 0)
             {
@@ -15,10 +24,7 @@ public readonly record struct ZmijDecimal
                 exponent++;
             }
         }
-
-        Significand = significand;
-        Exponent = exponent;
-        IsNegative = isNegative;
+        return new ZmijDecimal(significand, exponent, isNegative);
     }
 
     public ulong Significand { get; }

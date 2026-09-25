@@ -32,7 +32,7 @@ internal static partial class ZmijCore
         if (binExp == 0 || binExp == DoubleExponentMask)
         {
             if (binExp != 0)
-                return new ZmijDecimal(binSig, NonFiniteExponent, negative, normalize: false);
+                return new ZmijDecimal(binSig, NonFiniteExponent, negative);
 
             if (binSig == 0)
                 return new ZmijDecimal(0, 0, negative);
@@ -54,14 +54,14 @@ internal static partial class ZmijCore
             resultExponent = dec.Exponent;
             // A nonzero final digit proves the result is already canonical.
             if (dec.LastDigit != 0)
-                return new ZmijDecimal(significand, resultExponent, negative, normalize: false);
+                return new ZmijDecimal(significand, resultExponent, negative);
         }
         else
         {
             significand = dec.Significand;
             resultExponent = dec.Exponent + 1;
         }
-        return new ZmijDecimal(significand, resultExponent, negative);
+        return ZmijDecimal.CreateNormalized(significand, resultExponent, negative);
     }
 
     private static DecimalResult ToDecimal(ulong binSig, int decimalExp, int shift, ulong powHigh, ulong powLow)

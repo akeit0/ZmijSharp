@@ -149,7 +149,7 @@ internal static class ExtendedVerification
                 {
                     ulong bits = ulong.Parse(fields[1], NumberStyles.HexNumber, Invariant);
                     ZmijDecimal actual = ZmijFormatter.ToDecimal(BitConverter.Int64BitsToDouble(unchecked((long)bits)));
-                    ZmijDecimal upstream = new(significand, exponent, negative, normalize: false);
+                    ZmijDecimal upstream = new(significand, exponent, negative);
                     if (actual != upstream)
                     {
                         if (NormalizeDecimal(actual) != NormalizeDecimal(upstream))
@@ -162,7 +162,7 @@ internal static class ExtendedVerification
                 {
                     uint bits = uint.Parse(fields[1], NumberStyles.HexNumber, Invariant);
                     ZmijDecimal actual = ZmijFormatter.ToDecimal(BitConverter.Int32BitsToSingle(unchecked((int)bits)));
-                    ZmijDecimal upstream = new(significand, exponent, negative, normalize: false);
+                    ZmijDecimal upstream = new(significand, exponent, negative);
                     if (actual != upstream)
                     {
                         if (NormalizeDecimal(actual) != NormalizeDecimal(upstream))
