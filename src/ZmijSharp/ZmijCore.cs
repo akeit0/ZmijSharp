@@ -132,10 +132,14 @@ internal static partial class ZmijCore
     internal static void GetPowerOf10(int decimalExp, out ulong high, out ulong low)
     {
 #if ZMIJ_FULL_TABLE
-        int index = decimalExp + 293;
+        int index = unchecked(decimalExp + 293);
+        // All ToDecimal callers produce q in [-293, 323] for double and
+        // [-32, 44] for float. The table has entries through q = 324.
+        Debug.Assert((uint)index < 618U);
         int offset = index << 1;
-        high = Pow10Tables.Significands[offset];
-        low = Pow10Tables.Significands[offset + 1];
+        ref ulong pair = ref Unsafe.Add(ref MemoryMarshal.GetReference(Pow10Tables.Significands), offset);
+        high = pair;
+        low = Unsafe.Add(ref pair, 1);
 #else
         CompactPow10Cache.Get(decimalExp, out high, out low);
 #endif

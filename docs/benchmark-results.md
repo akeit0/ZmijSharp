@@ -50,7 +50,7 @@ The temporary `BigInteger` counted-precision path was a poor fit for this librar
 
 ## Size
 
-The [size and assembly record](size-and-assembly.md) uses one minimal `double` shortest-producer project for both algorithms, excluding the standalone formatter. Its Release DLLs are 11,776 B for compact Zmij and 19,968 B for the pinned #131068 local port. It separates these PE lengths from counted source data and x64 JIT code. [`verify_compact_cache.py`](../tools/verify_compact_cache.py) re-derives all 618 compact entries with exact integers.
+The [size and assembly record](size-and-assembly.md) uses one minimal `double` shortest-producer project for both algorithms, excluding the standalone formatter. Its current Release DLLs are 12,288 B for compact Zmij and 19,968 B for the pinned #131068 local port. It separates these PE lengths from counted source data and x64 JIT code. [`verify_compact_cache.py`](../tools/verify_compact_cache.py) re-derives all 618 compact entries with exact integers.
 
 ## Consumer benchmark limit
 

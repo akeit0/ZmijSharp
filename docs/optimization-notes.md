@@ -43,7 +43,7 @@ A temporary integration applied BCD8 only to 16-digit Zmij results. It passed th
 
 ## Later `ToDecimal` and SIMD trials
 
-The current `DecimalResult` uses an `int` digit with `-1` as the absent-digit marker. This removes the checked byte conversion and decoding from the private 16-byte result. In the minimal-profile Windows x64 .NET 11 RC JIT listing, the `double` entry is **298** native bytes and its conversion method is **1,065** bytes, compared with **301** and **1,097** bytes in the earlier listing above. The minimal Zmij DLL remains **11,776 B**. The 249,884-input minimal-profile digest, 11 unit tests, and 2,000,000 random inputs plus binary-exponent boundaries agree with the pinned #131068 port. One decomposition ShortRun measured 8.673 ns/value for `LongSignificand`, 11.396 for `Random`, and 19.344 for `Simple`; these are within the earlier ranges, so the change is a code-size cleanup rather than a demonstrated throughput improvement.
+The current `DecimalResult` uses an `int` digit with `-1` as the absent-digit marker. This removes the checked byte conversion and decoding from the private 16-byte result. At that revision, the minimal-profile Windows x64 .NET 11 RC JIT listing had a **298-byte** `double` entry and **1,065-byte** conversion method, compared with **301** and **1,097** bytes in the earlier listing above. The minimal Zmij DLL was **11,776 B**. The 249,884-input minimal-profile digest, 11 unit tests, and 2,000,000 random inputs plus binary-exponent boundaries agreed with the pinned #131068 port. One decomposition ShortRun measured 8.673 ns/value for `LongSignificand`, 11.396 for `Random`, and 19.344 for `Simple`; these were within the earlier ranges, so the change was a code-size cleanup rather than a demonstrated throughput improvement.
 
 Other `ToDecimal` changes were measured and removed:
 
@@ -80,4 +80,19 @@ A power-of-two stride was also tested with exact integer verification of all 618
 | Stride 16, run 2 | 7.908 ns | 12.638 ns | 17.696 ns |
 | Restored stride 28, subsequent run | 8.762 ns | 11.845 ns | 19.814 ns |
 
-The stride-16 gains depend on the input set, while both random-input runs regress and the DLL is larger. The production cache remains stride 28. Native byte count and removed instructions alone did not predict throughput.
+The stride-16 gains depend on the input set, while both random-input runs regress and the DLL is larger. That standalone trial was reverted at the time; the later combined version below adopts stride 16. Native byte count and removed instructions alone did not predict throughput.
+
+## Stacked cache changes
+
+The current compact profile combines the exact stride-16 table with branchless normalization of its 192-bit product. The mask expression was retained after two ShortRuns with checked table reads measured **9.842–10.058 ns/value** on `Random`, compared with **11.845 ns/value** for the preceding stride-28 run. A zero-or-one variable-shift form measured **11.024 ns/value** on `Random` in one ShortRun, so the mask form stayed. These are separate runs, not a matched CoreLib comparison.
+
+Both cache profiles now use `MemoryMarshal.GetReference` and `Unsafe.Add` for their table reads. The compact profile forms one pointer to each anchor pair; the full profile forms one pointer to each direct cached-power pair. The Release x64 `ToDecimal(ulong, int, bool)` listings have no table bounds-check branch or helper call. Their private-method sizes are **1,005 B compact** and **631 B full**, versus **1,065 B** and **683 B** before these changes. The unchecked indices are internal: every `double` conversion supplies cached exponent `q` in **[-293, 323]**, every `float` conversion in **[-32, 44]**, and both tables cover **[-293, 324]**. Debug assertions document this contract. The original parity expression remains; its alternate forms did not show a useful gain.
+
+The current minimal DLLs are **12,288 B compact** and **20,480 B full**. Both profiles passed exact cache identity for all 618 entries, 11 unit tests, a two-million-pattern plus exponent-boundary comparison, and the same 249,884-input digits-and-scale digest as the pinned #131068 local port. [Final-shape decomposition ShortRuns](benchmark-sessions/stacked-cache-short.md) on the same Windows x64 .NET 11 RC host, run separately, measured:
+
+| Current profile | `LongSignificand` | `Random` | `Simple` |
+|---|---:|---:|---:|
+| Compact, stride 16 | 8.933 ns | 11.320 ns | 18.966 ns |
+| Full direct table | 6.417 ns | 8.541 ns | 15.739 ns |
+
+The compact random result is close to the earlier stride-28 range, while the current full-table random result is above the earlier **7.460–7.561 ns/value** range. The individual no-check variants changed JIT layout and did not preserve the larger gain seen with checked reads. The source keeps the combined structural changes for further optimization; these timings should not be used as a speedup claim for the posted issue.

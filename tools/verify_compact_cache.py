@@ -7,8 +7,8 @@ bit-identity. No dependencies beyond the standard library.
 
 Checks:
   1. Exact cache entries P_q = floor(10^q * 2^(127 - g(q))) for q = -293..324.
-  2. Normalized minor factors M_r for r = 0..27.
-  3. Anchor interval containment for all 23 blocks of stride 28.
+  2. Normalized minor factors M_r for the configured stride.
+  3. Anchor interval containment for every block.
   4. Reconstruction-minus-fixup equals P_q with no high-word borrow.
 """
 
@@ -19,7 +19,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 CACHE = ROOT / "src/ZmijSharp/CompactPow10Cache.cs"
 
-MIN_Q, MAX_Q, STRIDE = -293, 324, 28
+MIN_Q, MAX_Q = -293, 324
 
 
 def ulongs(text):
@@ -56,15 +56,20 @@ def exact_entry(q):
 
 
 def main():
-    anchors = ulongs(section(CACHE, "Anchors =>", ["q0 = -293", "q0 = 323"]))
-    assert len(anchors) == 46, len(anchors)
+    source = CACHE.read_text(encoding="utf-8-sig")
+    stride = int(re.search(r"private const int Stride = (\d+);", source).group(1))
+    anchor_start = int(re.search(r"private const int AnchorStart = (-?\d+);", source).group(1))
+    assert anchor_start <= MIN_Q and (stride & (stride - 1)) == 0
+    blocks = (MAX_Q - anchor_start) // stride + 1
+    anchors = ulongs(section(CACHE, "Anchors =>", [f"q0 = {anchor_start}"]))
+    assert len(anchors) == 2 * blocks, len(anchors)
     minors = ulongs(section(CACHE, "Minor =>", ["0x8000000000000000UL"]))
-    assert len(minors) == 28, len(minors)
-    fixups = [int(m, 16) for m in re.findall(r"0x([0-9A-Fa-f]{2})", section(CACHE, "Fixups =>", ["0x1F"]))]
+    assert len(minors) == stride, len(minors)
+    fixups = [int(m, 16) for m in re.findall(r"0x([0-9A-Fa-f]{2})", section(CACHE, "Fixups =>", ["0x"]))]
     assert len(fixups) == 78, len(fixups)
 
     # 2. Normalized minors are exact: M_r is 5^r normalized into 64 bits.
-    for r in range(28):
+    for r in range(stride):
         p5 = pow(5, r)
         assert minors[r] == (p5 << (63 - (p5.bit_length() - 1))), r
 
@@ -72,8 +77,8 @@ def main():
     corrections = {0: 0, 1: 0}
     for qi in range(MIN_Q, MAX_Q + 1):
         i = qi - MIN_Q
-        block, r = divmod(i, STRIDE)
-        q0 = MIN_Q + STRIDE * block
+        block, r = divmod(qi - anchor_start, stride)
+        q0 = anchor_start + stride * block
         s = 63 + g(qi) - g(q0) - g(r)
         assert s in (63, 64), (qi, s)
         hi, lo = exact_entry(qi)
@@ -97,8 +102,7 @@ def main():
         assert rl >= fix, qi  # no high-word borrow, matching the generated C#
         assert rh == hi and rl - fix == lo, qi
 
-    assert corrections == {0: 405, 1: 213}, corrections
-    print(f"entries: 618 ok; corrections without fixup: 405, with fixup: 213")
+    print(f"entries: 618 ok; corrections without fixup: {corrections[0]}, with fixup: {corrections[1]}")
     print("ALL CHECKS PASSED")
 
 
