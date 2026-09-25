@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace ZmijSharp;
@@ -51,14 +52,15 @@ internal static partial class ZmijCore
         int binExp = rawExp - FloatExponentOffset;
         if (!regular)
         {
+            Debug.Assert(binSig == FloatImplicitBit);
             int decExp = ComputeDecimalExponent(binExp, regular: false);
             int irregularShift = ComputeExponentShift(binExp, decExp + 1) + ExtraShift;
             GetPowerOf10(-decExp - 1, out ulong irregularPow10High, out ulong irregularPow10Low);
-            ulong irregularY = (ulong)binSig << irregularShift;
-            ulong irregularPHigh = Math.BigMul(irregularPow10High, irregularY, out ulong irregularPLow);
-            ulong irregularLowProductHigh = Math.BigMul(irregularPow10Low, irregularY, out _);
-            ulong irregularProductLow = irregularPLow + irregularLowProductHigh;
-            ulong irregularProductHigh = irregularPHigh + (irregularProductLow < irregularPLow ? 1UL : 0UL);
+            int powerShift = FloatSignificandBits + irregularShift;
+            Debug.Assert(powerShift is >= 27 and <= 30);
+            ulong irregularProductHigh = irregularPow10High >> (64 - powerShift);
+            ulong irregularProductLow = (irregularPow10High << powerShift)
+                | (irregularPow10Low >> (64 - powerShift));
 
             ulong integral = irregularProductHigh >> ExtraShift;
             ulong fractional = (irregularProductHigh << (64 - ExtraShift)) | (irregularProductLow >> ExtraShift);

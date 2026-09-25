@@ -62,14 +62,16 @@ internal static partial class ZmijCore
         int binExp = rawExp - DoubleExponentOffset;
         if (!regular)
         {
+            // The caller reaches this path only for a normal power of two.
+            Debug.Assert(binSig == DoubleImplicitBit);
             int decExp = ComputeDecimalExponent(binExp, regular: false);
             int irregularShift = ComputeExponentShift(binExp, decExp + 1) + ExtraShift;
             GetPowerOf10(-decExp - 1, out ulong irregularPow10High, out ulong irregularPow10Low);
-            ulong irregularY = binSig << irregularShift;
-            ulong irregularPHigh = Math.BigMul(irregularPow10High, irregularY, out ulong irregularPLow);
-            ulong irregularLowProductHigh = Math.BigMul(irregularPow10Low, irregularY, out _);
-            ulong irregularProductLow = irregularPLow + irregularLowProductHigh;
-            ulong irregularProductHigh = irregularPHigh + (irregularProductLow < irregularPLow ? 1UL : 0UL);
+            int powerShift = DoubleSignificandBits + irregularShift;
+            Debug.Assert(powerShift is >= 56 and <= 59);
+            ulong irregularProductHigh = irregularPow10High >> (64 - powerShift);
+            ulong irregularProductLow = (irregularPow10High << powerShift)
+                | (irregularPow10Low >> (64 - powerShift));
 
             ulong integral = irregularProductHigh >> ExtraShift;
             ulong fractional = (irregularProductHigh << (64 - ExtraShift)) | (irregularProductLow >> ExtraShift);
