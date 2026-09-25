@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <AssemblyName>ZmijSharp.Full</AssemblyName>
+    <DefineConstants>$(DefineConstants);ZMIJ_FULL_TABLE</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../src/ZmijSharp/ZmijCore.cs" Link="ZmijCore.cs" />
+    <Compile Include="../../src/ZmijSharp/ZmijCore.Float.cs" Link="ZmijCore.Float.cs" />
+    <Compile Include="../../src/ZmijSharp/ZmijDecimal.cs" Link="ZmijDecimal.cs" />
+    <Compile Include="../../src/ZmijSharp/ZmijFormatter.cs" Link="ZmijFormatter.cs" />
+    <Compile Include="../../src/ZmijSharp/Pow10Tables.cs" Link="Pow10Tables.cs" />
+    <InternalsVisibleTo Include="ZmijSharp.Benchmarks" />
+  </ItemGroup>
+</Project>

@@ -9,6 +9,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/ZmijSharp/ZmijSharp.csproj" />
+    <ProjectReference Include="../ZmijSharp.Full/ZmijSharp.Full.csproj" Aliases="ZmijFull" />
     <ProjectReference Include="../../src/ZmijSharp.RuntimeShim/ZmijSharp.RuntimeShim.csproj" />
     <ProjectReference Include="../../src/UnroundedScaling.Comparison/UnroundedScaling.Comparison.csproj" />
     <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
