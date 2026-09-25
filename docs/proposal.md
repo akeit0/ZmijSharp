@@ -12,15 +12,17 @@ Shortest formatting is used by default `ToString`/`TryFormat` calls and by consu
 
 The compact cache reconstructs 618 cached powers. The same minimal, presentation-free project builds each shortest-`double` producer behind an identical digits-and-scale API. Its #131068 profile specializes [the generic producer at `56ff8516`](https://github.com/dotnet/runtime/blob/56ff851680b3c64a9ecaf543225b9cc948fe0262/src/libraries/System.Private.CoreLib/src/System/Number.UnroundedScaling.cs) for `double` and byte-specializes the pinned CoreLib digit helpers.
 
-| Size measure | Zmij compact | #131068 local `double` port |
-|---|---:|---:|
-| Power-cache source constants | 830 B | 11,136 B |
-| Minimal Release `Shortest.Core.dll` | 12,288 B | 19,968 B |
-| Listed x64 JIT call tree | 1,562 B | 1,391 B |
+| Size measure | Zmij compact | Zmij full | #131068 local `double` port |
+|---|---:|---:|---:|
+| Power-cache source constants | 830 B | 9,888 B | 11,136 B |
+| Listed digit-helper constants | 360 B | 360 B | 432 B |
+| **Listed source data** | **1,190 B** | **10,248 B** | **11,568 B** |
+| Minimal Release `Shortest.Core.dll` | 12,288 B | 20,480 B | 19,968 B |
+| Listed x64 JIT call tree | 1,562 B | 1,383 B | 1,391 B |
 
-The #131068 [power table](https://github.com/dotnet/runtime/blob/56ff851680b3c64a9ecaf543225b9cc948fe0262/src/libraries/System.Private.CoreLib/src/System/Number.Pow10Table.cs) is shared across four types and bounded precision; the local DLL and JIT rows cover only its `double` shortest path. The DLL figures are PE file lengths, while the JIT figures are native instruction bytes. None is an incremental CoreLib size estimate. The Zmij JIT row includes [later code-size reductions](optimization-notes.md). For separate context, Grisu3 has **1,084 bytes** across its four source tables at [`dotnet/runtime` `f0df4333`](https://github.com/dotnet/runtime/blob/f0df4333553c63a6bdba26228ab94b99e4a1c8d1/src/libraries/System.Private.CoreLib/src/System/Number.Grisu3.cs). See the size and assembly record linked below for the counted arrays and method list.
+The #131068 [power table](https://github.com/dotnet/runtime/blob/56ff851680b3c64a9ecaf543225b9cc948fe0262/src/libraries/System.Private.CoreLib/src/System/Number.Pow10Table.cs) is shared across four types and bounded precision; the local DLL and JIT rows cover only its `double` shortest path. The port's listed digit-helper constants are existing CoreLib data. All three minimal DLLs use the same project and public adapter. DLL figures are PE file lengths, while JIT figures are native instruction bytes; none is an incremental CoreLib size estimate. For separate context, Grisu3 has **1,084 bytes** across its four source tables at [`dotnet/runtime` `f0df4333`](https://github.com/dotnet/runtime/blob/f0df4333553c63a6bdba26228ab94b99e4a1c8d1/src/libraries/System.Private.CoreLib/src/System/Number.Grisu3.cs). See the size and assembly record linked below for the counted arrays and method list.
 
-The [full-cache diagnostic](size-and-assembly.md#full-cache-diagnostic) makes the cache tradeoff visible. The current minimal Zmij DLLs are **12,288 B** compact and **20,480 B** full. The full profile uses **9,888 B** of cached-power source constants versus **830 B** compact. The performance table below compares both current profiles with the pinned #131068 local producer. These are local measurements, not matched CoreLib results. The posted issue retains its pinned earlier measurements.
+The [full-cache diagnostic](size-and-assembly.md#full-cache-diagnostic) explains the cache tradeoff and JIT code paths. The performance table below compares both current profiles with the pinned #131068 local producer. These are local measurements, not matched CoreLib results. The posted issue retains its pinned earlier measurements.
 
 ## Evidence available today
 
@@ -28,13 +30,13 @@ The [full-cache diagnostic](size-and-assembly.md#full-cache-diagnostic) makes th
 - A separate exact-integer shortest-decimal oracle passed sampled and exponent-boundary cases. A pinned upstream Żmij differential passed one million random patterns per type plus exponent boundaries after normalizing trailing-zero representation differences.
 - A matrix of four number-format providers, 14 format strings, and destination capacities passed against the installed runtime. This checks the standalone wrapper; it does not establish CoreLib integration behavior.
 
-The [current decomposition ShortRun](benchmark-sessions/same-run-cache-profiles-short.md) measured finite nonzero `double` conversion without digit writing on Windows x64 with .NET 11 RC. The [benchmark class](../benchmarks/ZmijSharp.Benchmarks/CacheProfileDecompositionBenchmarks.cs) references compact, full, and #131068 producer assemblies in one build. BenchmarkDotNet launches each case in a separate process. Setup checked equal canonical `(significand, exponent)` tuples on every input. Values are ns/value over 10,000-value corpora; lower is better.
+The [current default-job comparison](benchmark-sessions/shortest-decomposition-default.md) measured finite nonzero `double` conversion without digit writing on Windows x64 with .NET 11 RC. The [benchmark class](../benchmarks/ZmijSharp.Benchmarks/ShortestDecompositionComparisonBenchmarks.cs) references compact, full, and #131068 producer assemblies in one build. BenchmarkDotNet launches each case in a separate process. Setup checked equal canonical `(significand, exponent)` tuples on every input. Values are mean ns/value over 10,000-value corpora; lower is better. The session record includes standard deviations.
 
 | Corpus | Zmij compact | Zmij full | #131068 local port |
 |---|---:|---:|---:|
-| Simple | 18.448 | 15.525 | 15.187 |
-| Varied long significands | 8.108 | 5.783 | 6.763 |
-| Random raw IEEE bits | 10.175 | 6.058 | 8.880 |
+| Simple | 18.354 | 15.215 | 15.160 |
+| Varied long significands | 8.049 | 5.613 | 6.817 |
+| Random raw IEEE bits | 10.055 | 6.164 | 8.613 |
 
 The compact profile was slower than the local #131068 port on these corpora. Full-cache Zmij was faster on varied long significands and random bits and close on simple values, at the larger table and DLL size above. The port's diagnostic canonical helper trims integer trailing zeros, whereas production `TryRun` trims written bytes; Zmij's entry point retains sign and exceptional-value handling. The buffer probe found pointer and span storage near parity, while byte-to-`char` staging in the local comparison wrapper had a larger measured cost. These component results do not predict relative performance in CoreLib; [methods, caveats, and raw summaries](component-benchmarks.md) are linked here.
 
@@ -55,4 +57,4 @@ This candidate covers shortest `float` and `double`; it does not yet provide `Ha
 
 ## Reproducible reference
 
-The [measured benchmark source at `d932eda`](https://github.com/akeit0/ZmijSharp/tree/d932eda) includes both cache profiles and the pinned comparison port. The [current decomposition results](benchmark-sessions/same-run-cache-profiles-short.md) and [size and assembly record](size-and-assembly.md) describe the measurements. The [component methods and earlier stage measurements](component-benchmarks.md) remain available for diagnosis. The posted issue retains its pinned earlier revision until its body is explicitly updated.
+The [measured benchmark source at `5033b1f`](https://github.com/akeit0/ZmijSharp/tree/5033b1f) includes both cache profiles and the pinned comparison port. The [current decomposition results](benchmark-sessions/shortest-decomposition-default.md) and [size and assembly record](size-and-assembly.md) describe the measurements. The [component methods and earlier stage measurements](component-benchmarks.md) remain available for diagnosis. The posted issue retains its pinned earlier revision until its body is explicitly updated.

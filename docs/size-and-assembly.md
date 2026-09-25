@@ -6,12 +6,14 @@ This record compares the **finite, nonzero `double` shortest-digit producer** fr
 
 | Source | Elements | Raw bytes |
 |---|---:|---:|
-| Current .NET Grisu3 cached powers | 87 × (`ulong` + two `short`) | 1,044 |
-| Current .NET Grisu3 small powers | 10 × `uint` | 40 |
-| **Current Grisu3 total** | Four arrays | **1,084** |
+| .NET Grisu3 cached powers at `f0df4333` | 87 × (`ulong` + two `short`) | 1,044 |
+| .NET Grisu3 small powers at `f0df4333` | 10 × `uint` | 40 |
+| **Pinned Grisu3 total** | Four arrays | **1,084** |
 | Zmij compact cached powers | 39 × two `ulong` anchors + 16 × `ulong` minors + 78 fixup bytes | 830 |
+| Zmij full cached powers | 618 × two `ulong` | 9,888 |
 | Zmij digit helpers | 20 × `ulong` + 200 ASCII bytes | 360 |
 | **Zmij compact total** | Listed arrays | **1,190** |
+| **Zmij full total** | Full cache plus the same digit helpers | **10,248** |
 | Pinned #131068 cached powers | 696 × two `ulong` | 11,136 |
 | Pinned #131068 local digit helpers | 64 log bytes + 21 `ulong` powers + 100 `ushort` digit pairs | 432 |
 | **Pinned #131068 local total** | Listed arrays in isolated `double` build | **11,568** |
@@ -20,22 +22,23 @@ Grisu3 is counted from [`Number.Grisu3.cs` at `dotnet/runtime` `f0df4333`](https
 
 The PR's [generic producer](https://github.com/dotnet/runtime/blob/56ff851680b3c64a9ecaf543225b9cc948fe0262/src/libraries/System.Private.CoreLib/src/System/Number.UnroundedScaling.cs) shares that table across `double`, `float`, `Half`, and `BFloat16`. **The 16-bit types add no separate cached-power data.** The [PR description](https://github.com/dotnet/runtime/pull/131068) attributes their additional size to native generic specializations. The 432 helper bytes above come from [existing CoreLib routines](../src/UnroundedScaling.Comparison/SOURCE.md), so they are counted in the isolated port but are not new data added by the PR. These counts exclude alignment, metadata, native code, and other formatter data. The port's bounded-precision helper also defines a 160-byte small-power table; that helper is excluded from the shortest-only DLL below.
 
-The optional full Zmij cache stores 618 pairs of `ulong` values (9,888 raw bytes). It is a build alternative used to study cache reconstruction, not a separate row in the compact-versus-#131068 DLL comparison. [`generate_compact_cache.py`](../tools/generate_compact_cache.py) builds the stride-16 tables from integer intervals, and [`verify_compact_cache.py`](../tools/verify_compact_cache.py) checks all 618 reconstructions against exact arithmetic.
+The optional full Zmij cache stores 618 pairs of `ulong` values. It is a build alternative used to study cache reconstruction. [`generate_compact_cache.py`](../tools/generate_compact_cache.py) builds the stride-16 tables from integer intervals; [`verify_compact_cache.py`](../tools/verify_compact_cache.py) checked all 618 reconstructions against exact arithmetic again on September 26, 2026.
 
 ## Comparable minimal DLLs
 
-[`ShortestCoreSize.csproj`](../tools/ShortestCoreSize/ShortestCoreSize.csproj) builds the same `Shortest.Core.dll` project twice. Each profile exposes the same `Digits.TryGetSignificantDigits(double, Span<byte>, out int, out int)` method and accepts finite, nonzero values with a 32-byte destination. Neither profile has a presentation writer or a project reference to the other. By default, the Zmij profile source-links its `double` core, normalized decimal type, compact cache, and digit writer; its `float` code is in a separate file and is excluded. The unrounded profile source-links the pinned PR's shortest algorithm specialized for `double`, its identical power table, a local buffer/digit helper, and the adapter; `SHORTEST_ONLY` excludes bounded-precision code and its small-power table.
+[`ShortestCoreSize.csproj`](../tools/ShortestCoreSize/ShortestCoreSize.csproj) builds the same `Shortest.Core.dll` project for compact Zmij, full-cache Zmij, and the pinned #131068 local port. Each profile exposes the same `Digits.TryGetSignificantDigits(double, Span<byte>, out int, out int)` method and accepts finite, nonzero values with a 32-byte destination. The project has no presentation writer. The Zmij profiles source-link the `double` core, decimal type, chosen cache, and digit writer; its `float` code is in a separate file and is excluded. The unrounded profile source-links the pinned PR's shortest algorithm specialized for `double`, its identical power table, a local buffer/digit helper, and the adapter; `SHORTEST_ONLY` excludes bounded-precision code and its small-power table.
 
-Windows x64, .NET SDK `11.0.100-rc.1.26425.128`, Release `net11.0`:
+Remeasured September 26, 2026 on Windows x64, .NET SDK `11.0.100-rc.1.26425.128`, Release `net11.0`:
 
 | `Shortest.Core.dll` build | File length |
 |---|---:|
-| `ShortestCore=Zmij` | **12,288 B** |
+| `ShortestCore=Zmij`, compact cache | **12,288 B** |
+| `ShortestCore=Zmij`, full cache | **20,480 B** |
 | `ShortestCore=Unrounded` (pinned #131068 local port) | **19,968 B** |
 
-Both assemblies are built by the same project settings and differ by **7,680 B** as PE files. The comparison is meaningful for these two isolated `double` shortest producers and their identical public adapter. The #131068 row is a local specialization of the pinned generic source with byte-specialized CoreLib helpers; it is not the PR's CoreLib image delta or a result for other types or bounded precision. PE section rounding, metadata, and IL are included in the file lengths.
+All three assemblies use the same project settings and public adapter. Compact Zmij is **7,680 B** smaller than the local #131068 port; full-cache Zmij is **512 B** larger. The #131068 row is a local specialization of the pinned generic source with byte-specialized CoreLib helpers; it is not the PR's CoreLib image delta or a result for other types or bounded precision. PE section rounding, metadata, and IL are included in the file lengths. The benchmark-only `ZmijSharp.Full.dll` uses a different project and includes presentation code, so it is not a row in this size comparison.
 
-The [check program](../tools/ShortestCoreSize.Check/Program.cs) ran both compact Zmij and #131068 builds over the same 250,000 deterministic raw patterns. Each accepted 249,884 finite nonzero values, round-tripped them, and produced the same digits-and-scale SHA-256 digest. Run the sequential build and check with `./tools/measure-shortest-core.ps1`.
+The [check program](../tools/ShortestCoreSize.Check/Program.cs) ran all three builds over the same 250,000 deterministic raw patterns. Each accepted 249,884 finite nonzero values, round-tripped them, and produced the same digits-and-scale SHA-256 digest. Run the compact and #131068 builds sequentially with `./tools/measure-shortest-core.ps1`; the full-cache command is below.
 
 ## Full-cache diagnostic
 
@@ -44,11 +47,10 @@ The same Zmij minimal project can source-link either cache, with the same finite
 | Measure | Compact cache | Full cache |
 |---|---:|---:|
 | Cached-power source constants | 830 B | 9,888 B |
-| Minimal `Shortest.Core.dll` | 12,288 B | 20,480 B |
 | JIT `ToDecimal(ulong, int, int, ulong, ulong)` | 486 B | 486 B |
 | Listed shortest call tree | 1,562 B | 1,383 B |
 
-The [current three-producer ShortRun](benchmark-sessions/same-run-cache-profiles-short.md) builds compact, full, and the pinned #131068 port into one benchmark program. Its full-cache assembly has a distinct name and is separate from the identical-project minimal DLLs in the table above. The [earlier alternating decomposition ShortRuns](benchmark-sessions/cache-profiles-decomposition.md) used the former stride-28 cache: full took **6.118–6.148 ns/value** for varied long significands and **7.460–7.561 ns/value** for random bits; compact took **8.924** and **11.502 ns/value**. The [stride-16 pre-caller runs](benchmark-sessions/stacked-cache-short.md) and [caller-placement comparison](benchmark-sessions/shared-caller-short.md) are recorded separately. The full table saves reconstruction work but adds **9,058 source-data bytes** and **8,192 B** to the minimal DLL. The measurements cover local canonical decomposition, not a separately timed cache lookup or a CoreLib build.
+The [current three-producer default-job comparison](benchmark-sessions/shortest-decomposition-default.md) builds compact, full, and the pinned #131068 port into one benchmark program. Its full-cache assembly has a distinct name and is separate from the identical-project minimal DLLs in the table above. The [earlier alternating decomposition ShortRuns](benchmark-sessions/cache-profiles-decomposition.md) used the former stride-28 cache: full took **6.118–6.148 ns/value** for varied long significands and **7.460–7.561 ns/value** for random bits; compact took **8.924** and **11.502 ns/value**. The [stride-16 pre-caller runs](benchmark-sessions/stacked-cache-short.md) and [caller-placement comparison](benchmark-sessions/shared-caller-short.md) are recorded separately. The full table saves reconstruction work but adds **9,058 source-data bytes** and **8,192 B** to the minimal DLL. The measurements cover local canonical decomposition, not a separately timed cache lookup or a CoreLib build.
 
 The outer conversion entry computes the decimal exponent, shift, and cached power once before calling its regular/irregular rounding method. On the regular path, the compact cache splits the power index into a 16-entry block, reads a minor and two anchor words, performs two 64-bit products, then normalizes and corrects the reconstructed pair. The full profile reads the pair directly. Regular conversion then performs two 64-bit products for scaling and one for the extra digit, followed by rounding. The entry skips trailing-zero division when the extra digit is nonzero; other results still use the normalization loop. For normal powers of two, scaling uses shifts instead of the two products. The [caller-placement ShortRuns](benchmark-sessions/shared-caller-short.md) and [last-digit trial](benchmark-sessions/nonzero-last-digit-short.md) measure the two source changes separately.
 
