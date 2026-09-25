@@ -48,10 +48,10 @@ The check program also drives x64 RyuJIT `FullOpts` with tiering disabled. The p
 | Method role | Zmij compact | Pinned #131068 local port |
 |---|---:|---:|
 | Public adapter | 171 B | 246 B |
-| Decode input | `ToDecimal(double)` 301 B | `ExtractFractionAndBiasedExponent` 64 B |
-| Shortest conversion | `ToDecimal(ulong, int, bool)` 1,097 B | `ShortFloat` 708 B |
+| Decode input | `ToDecimal(double)` 298 B | `ExtractFractionAndBiasedExponent` 64 B |
+| Shortest conversion | `ToDecimal(ulong, int, bool)` 1,065 B | `ShortFloat` 708 B |
 | Digit writing | `TryGetSignificantDigits(ZmijDecimal, …)` 299 B | `StoreDigits` 373 B, including inlined CoreLib helpers |
-| **Listed call-tree total** | **1,868 B** | **1,391 B** |
+| **Listed call-tree total** | **1,833 B** | **1,391 B** |
 
 The compact Zmij path spends instructions reconstructing cached powers: it indexes 28 minors and 23 anchors, multiplies the words, normalizes the result, and applies one correction bit. The pinned unrounded-scaling port reads adjacent table words. Native code is larger for Zmij in this JIT run while its counted data and DLL are smaller. These method totals are observations from one architecture and JIT; they cannot be added to the DLL lengths or used as a ReadyToRun estimate.
 
@@ -68,4 +68,4 @@ rg 'Assembly listing for method|Total bytes of code' zmij-disasm.txt unrounded-d
 
 The log files are local outputs. Use [benchmark results](benchmark-results.md) for timings; source-data and code-size counts alone do not predict throughput.
 
-The smaller Zmij entry method comes from [consolidating finite normalization paths](optimization-notes.md); the minimal DLL length is unchanged. The issue draft's earlier JIT figure is pinned to its measured revision.
+The smaller Zmij entry method comes from [consolidating finite normalization paths and simplifying the private result](optimization-notes.md); the minimal DLL length is unchanged. The posted issue retains the earlier JIT figure from its measured revision.

@@ -1,6 +1,8 @@
 using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
 using BenchmarkDotNet.Attributes;
 using ZmijSharp;
 
@@ -33,6 +35,9 @@ public class Bcd16ProbeBenchmarks
             BcdWrite16(_values[i], _buffer);
             if (!reference[..16].SequenceEqual(_buffer.AsSpan(0, 16)))
                 throw new InvalidOperationException($"BCD differs for {_values[i]}.");
+            SimdBcdWrite16(_values[i], _buffer);
+            if (!reference[..16].SequenceEqual(_buffer.AsSpan(0, 16)))
+                throw new InvalidOperationException($"SIMD BCD differs for {_values[i]}.");
         }
     }
 
@@ -55,6 +60,18 @@ public class Bcd16ProbeBenchmarks
         foreach (ulong value in _values)
         {
             BcdWrite16(value, _buffer);
+            sum += _buffer[0] + _buffer[15];
+        }
+        return sum;
+    }
+
+    [Benchmark(OperationsPerInvoke = 10_000)]
+    public int SimdBcd()
+    {
+        int sum = 0;
+        foreach (ulong value in _values)
+        {
+            SimdBcdWrite16(value, _buffer);
             sum += _buffer[0] + _buffer[15];
         }
         return sum;
@@ -92,7 +109,27 @@ public class Bcd16ProbeBenchmarks
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static ulong ToAsciiBcd8(ulong value)
+    private static void SimdBcdWrite16(ulong value, Span<byte> buffer)
+    {
+        if (!Sse2.IsSupported)
+        {
+            BcdWrite16(value, buffer);
+            return;
+        }
+
+        const ulong hundredMillion = 100_000_000UL;
+        ulong high = value / hundredMillion;
+        ulong low = value - high * hundredMillion;
+        Vector128<byte> bcd = Vector128.Create(ToBcd8(high), ToBcd8(low)).AsByte();
+        Vector128<byte> ascii = Sse2.Add(bcd, Vector128.Create((byte)'0'));
+        Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(buffer), ascii);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ulong ToAsciiBcd8(ulong value) => ToBcd8(value) + 0x3030303030303030UL;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ulong ToBcd8(ulong value)
     {
         const ulong div10k = (1UL << 40) / 10_000 + 1;
         const ulong neg10k = (1UL << 32) - 10_000;
@@ -107,7 +144,7 @@ public class Bcd16ProbeBenchmarks
             ulong c = b + neg10 * (((b * div10) >> 10) & 0xf000f000f000fUL);
             if (BitConverter.IsLittleEndian)
                 c = BinaryPrimitives.ReverseEndianness(c);
-            return c + 0x3030303030303030UL;
+            return c;
         }
     }
 }

@@ -8,14 +8,13 @@ The work overlaps with [dotnet/runtime#131068](https://github.com/dotnet/runtime
 
 | Read this | Purpose |
 |---|---|
-| [Proposal](docs/proposal.md) | The argument and questions intended for a `dotnet/runtime` issue |
+| [Proposal](docs/proposal.md) | The argument and questions behind [runtime issue #134638](https://github.com/dotnet/runtime/issues/134638) |
 | [Completed evidence](docs/evidence.md) | Checks that ran, what they establish, and how to repeat them |
 | [Component benchmarks](docs/component-benchmarks.md) and [size analysis](docs/size-and-assembly.md) | Measurement details behind the proposal |
-| [Optimization notes](docs/optimization-notes.md) | Later digit-helper comparison and x64 JIT code-size experiment |
-| [Component benchmarks](docs/component-benchmarks.md) | Isolated decomposition, buffer-shape, and byte-to-char staging measurements |
+| [Optimization notes](docs/optimization-notes.md) | Digit-writer, SIMD, and x64 JIT experiments |
 | [Work plan](docs/plan.md) | Remaining repository tasks, publication steps, and a possible runtime experiment |
 
-The proposal describes **what to show**; the plan records **what to do next**. No issue has been posted.
+The proposal describes **what to show**; the plan records **what to do next**. The [runtime issue #134638](https://github.com/dotnet/runtime/issues/134638) is posted; repository experiments can inform a later update.
 
 ## What is in the repository
 

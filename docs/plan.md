@@ -16,7 +16,7 @@ The remaining provenance and repeated-measurement tasks do not require a `dotnet
 
 ## 2. Ask for scope before implementing a runtime patch
 
-Post the [proposal](proposal.md) as a `dotnet/runtime` issue with [#131068](https://github.com/dotnet/runtime/pull/131068) and [#134621](https://github.com/dotnet/runtime/issues/134621) linked. The decision sought is whether maintainers want to evaluate the narrower shortest-producer experiment and which baseline to use. The local `UnroundedScaling.Comparison` project specializes pinned #131068 source for `double`; its measurements remain local-port evidence rather than matched CoreLib results.
+The [proposal issue #134638](https://github.com/dotnet/runtime/issues/134638) is posted with [#131068](https://github.com/dotnet/runtime/pull/131068) and [#134621](https://github.com/dotnet/runtime/issues/134621) linked. The decision sought is whether maintainers want to evaluate the narrower shortest-producer experiment and which baseline to use. The local `UnroundedScaling.Comparison` project specializes pinned #131068 source for `double`; its measurements remain local-port evidence rather than matched CoreLib results.
 
 The initial experiment should change **only finite, unconstrained shortest `float`/`double` digit production**. Its output is digits and scale consumed by CoreLib's existing `NumberBuffer` and presentation path. Preserve existing handling for counted precision, other formats, cultures, non-finite values, and failed destination writes. The standalone `ZmijFormatter`, `RuntimeShim`, and comparison project are test infrastructure, not proposed runtime components.
 

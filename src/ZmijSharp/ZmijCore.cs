@@ -255,21 +255,22 @@ internal static partial class ZmijCore
     private static int GetExponent(ulong bits) => (int)((bits << 1) >> (DoubleSignificandBits + 1));
 
     // Kept at 16 bytes to make struct-return codegen friendlier than the original
-    // ulong + int + int + bool shape. 0 means "no extra digit"; 1..10 encode 0..9.
+    // ulong + int + int + bool shape. -1 means "no extra digit"; 0..9 are digits.
     private readonly struct DecimalResult
     {
-        private readonly byte _encodedLastDigit;
+        private readonly int _lastDigit;
 
         internal DecimalResult(ulong significand, int exponent, int lastDigit, bool hasLastDigit)
         {
             Significand = significand;
             Exponent = exponent;
-            _encodedLastDigit = hasLastDigit ? checked((byte)(lastDigit + 1)) : (byte)0;
+            Debug.Assert(!hasLastDigit || (uint)lastDigit <= 9);
+            _lastDigit = hasLastDigit ? lastDigit : -1;
         }
 
         internal ulong Significand { get; }
         internal int Exponent { get; }
-        internal bool HasLastDigit => _encodedLastDigit != 0;
-        internal int LastDigit => _encodedLastDigit - 1;
+        internal bool HasLastDigit => _lastDigit >= 0;
+        internal int LastDigit => _lastDigit;
     }
 }
