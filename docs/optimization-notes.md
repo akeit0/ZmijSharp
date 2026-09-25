@@ -67,3 +67,17 @@ Moving common cache lookup and scaling into `ToDecimal(double)` before calling s
 A narrower trial kept multiplication and rounding in their existing regular/irregular branches, but moved `ComputeDecimalExponent`, `ComputeExponentShift`, and `GetPowerOf10` before the branch. The compact conversion method fell from **1,065 to 789 native bytes**, its stack reservation from **144 to 112 bytes**, and the minimal DLL stayed **11,776 B**. Unit tests, a two-million-pattern plus exponent-boundary comparison, and the minimal-profile digest passed.
 
 The first placement selected the decimal exponent with the `regular` flag and measured **13.902 ns/value** on random inputs, above the roughly **11.5 ns/value** of recent compact sessions. Computing the regular exponent first and overriding it for irregular values measured **11.712 ns/value** compact, but **8.684 ns/value** with the full table, above the earlier full-table **7.460–7.561 ns/value**. A branch-specific exponent calculation joined immediately before the cache lookup measured **11.969 ns/value** compact. These are single ShortRun diagnostics for each placement. None showed a consistent speed benefit across cache profiles, so the branch-local exponent, shift, and cache calculations remain in production.
+
+## Cache access and table stride trials
+
+The x64 `ToDecimal(ulong, int, bool)` listing has no helper call on its hot path; the compact cache is inlined. It includes bounds checks for the three table reads and reciprocal-multiply arithmetic for the stride-28 quotient. Replacing all three reads with `MemoryMarshal.GetReference` and `Unsafe.Add` removed the checks and reduced the method from **1,065 to 997 native bytes**, but one ShortRun measured **13.799 ns/value** on `Random` instead of the recent **11.4–11.8 ns/value** range. Replacing only the anchor read measured **11.619 ns/value** with a 1,041-byte method. Neither justified unchecked indexing. Moving the parity calculation later increased the method to 1,066 bytes and measured 13.500 ns/value on `Random`; shorter XOR or `andn` forms saved 5–6 native bytes but did not improve measured throughput. These expression-level trials were reverted.
+
+A power-of-two stride was also tested with exact integer verification of all 618 reconstructed powers. Stride 16 with anchors starting at exponent -298 needs **830 raw table bytes**, versus **670** for stride 28. A shift and mask replaced the quotient arithmetic in the JIT listing, reducing the conversion method to **1,034 native bytes**, but the minimal Release DLL rose from **11,776 to 12,288 B**. The table passed cache verification, unit tests, and the two-million-pattern agreement check. ShortRun decomposition timings were:
+
+| Cache | `LongSignificand` | `Random` | `Simple` |
+|---|---:|---:|---:|
+| Stride 16, run 1 | 7.773 ns | 12.510 ns | 17.882 ns |
+| Stride 16, run 2 | 7.908 ns | 12.638 ns | 17.696 ns |
+| Restored stride 28, subsequent run | 8.762 ns | 11.845 ns | 19.814 ns |
+
+The stride-16 gains depend on the input set, while both random-input runs regress and the DLL is larger. The production cache remains stride 28. Native byte count and removed instructions alone did not predict throughput.
