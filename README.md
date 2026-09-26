@@ -1,6 +1,6 @@
 # ZmijSharp
 
-ZmijSharp is an experimental C# implementation of shortest decimal formatting for IEEE 754 `float` and `double`. It explores whether a fixed-width Żmij/Schubfach-style converter and a compact power-of-ten cache could improve .NET's formatting path. This repository is a test bed for a possible [`dotnet/runtime` proposal](docs/proposal.md), not a runtime patch or a new .NET API proposal.
+ZmijSharp is an experimental C# implementation of shortest decimal formatting for IEEE 754 `float` and `double`. [Victor Zverovich's original Żmij](https://github.com/vitaut/zmij) is an algorithmic reference for this work. The repository explores whether a fixed-width Żmij/Schubfach-style converter and a compact power-of-ten cache could improve .NET's formatting path. It is a test bed for a possible [`dotnet/runtime` proposal](docs/proposal.md), not a runtime patch or a new .NET API proposal.
 
 The work overlaps with [dotnet/runtime#131068](https://github.com/dotnet/runtime/pull/131068), which proposes unrounded scaling for floating-point formatting, and [the Ryu proposal #134621](https://github.com/dotnet/runtime/issues/134621). The issue proposal focuses on an alternative shortest digit producer. The local comparison project uses a [pinned `double` specialization](src/UnroundedScaling.Comparison/SOURCE.md) of #131068 at `56ff8516`; it is not a matched CoreLib build or a measurement of later PR revisions.
 
