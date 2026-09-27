@@ -4,6 +4,13 @@ in the local implementation has not been established from the available history.
 These notices are retained for any material derived from those projects. The
 repository's own MIT license does not claim their copyrights.
 
+Benchmark-only xjb binary32 comparison code and cached powers are adapted from
+xjb714/xjb, commit 80cc89574a8f8457ffbf951afa2fd27c2459bd4a (2026-09-27),
+bench/xjb/float_to_decimal/xjb32_i.cpp. That project is licensed under
+Apache License 2.0. The license text is copied to
+benchmarks/ZmijSharp.Benchmarks/XJB-LICENSE.txt. The xjb code is not compiled
+into the production ZmijSharp library.
+
 Reference pins recorded 2026-09-25 (the adaptation predates precise source
 tracking, so these are differential reference points, not the adapted commits):
 

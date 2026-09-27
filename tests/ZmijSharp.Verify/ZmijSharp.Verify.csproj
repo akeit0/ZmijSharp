@@ -9,5 +9,8 @@
   <ItemGroup>
     <ProjectReference Include="../../src/ZmijSharp/ZmijSharp.csproj" />
     <ProjectReference Include="../../src/UnroundedScaling.Comparison/UnroundedScaling.Comparison.csproj" />
+    <ProjectReference Include="../../benchmarks/ZmijSharp.FloatFull/ZmijSharp.FloatFull.csproj" Aliases="ZmijFloatFull" />
+    <Compile Include="../../benchmarks/ZmijSharp.Benchmarks/XjbFloatComparison.cs" Link="XjbFloatComparison.cs" />
+    <Compile Include="../../benchmarks/ZmijSharp.Benchmarks/XjbFloatDirectCache.cs" Link="XjbFloatDirectCache.cs" />
   </ItemGroup>
 </Project>

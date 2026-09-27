@@ -34,7 +34,11 @@ internal static partial class ZmijCore
         int adjustedBinExp = binExp - FloatExponentOffset;
         int decimalExp = ComputeDecimalExponent(adjustedBinExp, binSig != 0);
         int shift = ComputeExponentShift(adjustedBinExp, decimalExp + 1) + ExtraShift;
+#if ZMIJ_FLOAT_FULL_TABLE
+        FloatFullPow10Cache.Get(-decimalExp - 1, out ulong powHigh, out ulong powLow);
+#else
         GetPowerOf10(-decimalExp - 1, out ulong powHigh, out ulong powLow);
+#endif
         DecimalResult dec = ToDecimalFloat(binSig ^ FloatImplicitBit, decimalExp, shift, powHigh, powLow);
         ulong significand;
         int resultExponent;

@@ -12,6 +12,7 @@ The work overlaps with [dotnet/runtime#131068](https://github.com/dotnet/runtime
 | [Completed evidence](docs/evidence.md) | Checks that ran, what they establish, and how to repeat them |
 | [Component benchmarks](docs/component-benchmarks.md) and [size analysis](docs/size-and-assembly.md) | Measurement details behind the proposal |
 | [Optimization notes](docs/optimization-notes.md) | Digit-writer, SIMD, and x64 JIT experiments |
+| [Binary32 xjb and hybrid cache experiment](docs/benchmark-sessions/xjb-float-hybrid-short.md) | Direct `float` cache with compact `double`, plus xjb32 producer comparisons |
 | [Work plan](docs/plan.md) | Remaining repository tasks, publication steps, and a possible runtime experiment |
 
 The proposal describes **what to show**; the plan records **what to do next**. The [runtime issue #134638](https://github.com/dotnet/runtime/issues/134638) is posted; repository experiments can inform a later update.
@@ -64,6 +65,8 @@ dotnet run -c Release --project benchmarks/ZmijSharp.Benchmarks -- --job Short
 ```
 
 Benchmark methods include runtime, Zmij, comparison-port, and runtime-shim paths. The [component record](docs/component-benchmarks.md) documents the inputs, output contracts, and limits of the measurements used in the proposal.
+
+To build the experimental profile with a direct `float` cache and compact `double` cache, pass `-p:ZmijCache=FloatFull` when building `src/ZmijSharp/ZmijSharp.csproj`. The default uses the compact cache for both types. Run `dotnet run -c Release --project tests/ZmijSharp.Verify -- --producer-only --xjb-float` to check the hybrid and xjb32 comparison producers on deterministic binary32 patterns.
 
 ## API example
 

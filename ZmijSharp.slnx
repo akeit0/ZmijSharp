@@ -6,5 +6,6 @@
   <Project Path="tests/ZmijSharp.Verify/ZmijSharp.Verify.csproj" />
   <Project Path="benchmarks/ZmijSharp.Benchmarks/ZmijSharp.Benchmarks.csproj" />
   <Project Path="benchmarks/ZmijSharp.Full/ZmijSharp.Full.csproj" />
+  <Project Path="benchmarks/ZmijSharp.FloatFull/ZmijSharp.FloatFull.csproj" />
   <Project Path="tools/ZmijSharp.JitDisasm/ZmijSharp.JitDisasm.csproj" />
 </Solution>

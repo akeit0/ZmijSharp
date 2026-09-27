@@ -23,10 +23,16 @@
   <PropertyGroup Condition="$(ZmijCache) == 'Full'">
     <DefineConstants>$(DefineConstants);ZMIJ_FULL_TABLE</DefineConstants>
   </PropertyGroup>
+  <PropertyGroup Condition="$(ZmijCache) == 'FloatFull'">
+    <DefineConstants>$(DefineConstants);ZMIJ_FLOAT_FULL_TABLE</DefineConstants>
+  </PropertyGroup>
   <ItemGroup Condition="!$(DefineConstants.Contains('ZMIJ_FULL_TABLE'))">
     <Compile Remove="Pow10Tables.cs" />
   </ItemGroup>
   <ItemGroup Condition="$(DefineConstants.Contains('ZMIJ_FULL_TABLE'))">
     <Compile Remove="CompactPow10Cache.cs" />
+  </ItemGroup>
+  <ItemGroup Condition="!$(DefineConstants.Contains('ZMIJ_FLOAT_FULL_TABLE'))">
+    <Compile Remove="FloatFullPow10Cache.cs" />
   </ItemGroup>
 </Project>

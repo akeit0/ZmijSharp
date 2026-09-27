@@ -1,9 +1,13 @@
+extern alias ZmijFloatFull;
+
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using ZmijSharp;
 using ZmijSharp.Verify;
 using UnroundedScaling.Comparison;
+using HybridCore = ZmijFloatFull::ZmijSharp.ZmijCore;
+using HybridFormatter = ZmijFloatFull::ZmijSharp.ZmijFormatter;
 
 var invariant = CultureInfo.InvariantCulture;
 var formats = new[] { "", "G", "g", "R", "r", "G0", "g0", "R17", "r17" };
@@ -11,10 +15,13 @@ var formats = new[] { "", "G", "g", "R", "r", "G0", "g0", "R17", "r17" };
 bool producerOnly = Array.Exists(args, value => value == "--producer-only");
 bool unroundedSmoke = Array.Exists(args, value => value == "--unrounded-smoke");
 bool formatMatrix = Array.Exists(args, value => value == "--format-matrix");
+bool xjbFloat = Array.Exists(args, value => value == "--xjb-float");
 int unroundedCountArgument = Array.FindIndex(args, value => value == "--unrounded-count");
 int unroundedCount = unroundedCountArgument >= 0 && unroundedCountArgument + 1 < args.Length ? int.Parse(args[unroundedCountArgument + 1], invariant) : 100_000;
 CacheIdentity.Check();
 Console.WriteLine("power cache identity: 618");
+if (xjbFloat)
+    RunXjbFloatComparison();
 if (unroundedSmoke)
 {
     RunUnroundedSmoke(unroundedCount);
@@ -73,6 +80,74 @@ if (exhaustiveOutputArgument >= 0)
 }
 
 Console.WriteLine("All comparisons passed.");
+
+void RunXjbFloatComparison()
+{
+    int checkedCount = 0;
+    void Check(uint bits)
+    {
+        float value = BitConverter.Int32BitsToSingle(unchecked((int)bits));
+        if (!float.IsFinite(value))
+            return;
+        ZmijDecimal expected = ZmijCore.ToDecimal(value);
+        ZmijDecimal actual = XjbFloatComparison.ToDecimal(value);
+        if (expected != actual)
+            throw new InvalidOperationException($"xjb32 mismatch at 0x{bits:X8}: Zmij={expected}, xjb={actual}");
+        ZmijDecimal direct = XjbFloatComparison.ToDecimalDirect(value);
+        if (expected != direct)
+            throw new InvalidOperationException($"xjb32 direct mismatch at 0x{bits:X8}: Zmij={expected}, xjb={direct}");
+        var hybrid = HybridCore.ToDecimal(value);
+        if (expected.Significand != hybrid.Significand || expected.Exponent != hybrid.Exponent || expected.IsNegative != hybrid.IsNegative)
+            throw new InvalidOperationException($"hybrid Zmij mismatch at 0x{bits:X8}: Zmij={expected}, hybrid={hybrid}");
+        if (checkedCount < 10_000)
+        {
+            Span<byte> compactUtf8 = stackalloc byte[64];
+            Span<byte> hybridUtf8 = stackalloc byte[64];
+            bool compactSuccess = ZmijFormatter.TryFormatUtf8(value, compactUtf8, out int compactLength);
+            bool hybridSuccess = HybridFormatter.TryFormatUtf8(value, hybridUtf8, out int hybridLength);
+            if (compactSuccess != hybridSuccess || compactLength != hybridLength
+                || !compactUtf8[..compactLength].SequenceEqual(hybridUtf8[..hybridLength]))
+                throw new InvalidOperationException($"hybrid UTF-8 mismatch at 0x{bits:X8}");
+            Span<char> compactUtf16 = stackalloc char[4];
+            Span<char> hybridUtf16 = stackalloc char[4];
+            compactSuccess = ZmijFormatter.TryFormat(value, compactUtf16, out compactLength);
+            hybridSuccess = HybridFormatter.TryFormat(value, hybridUtf16, out hybridLength);
+            if (compactSuccess != hybridSuccess || compactLength != hybridLength
+                || !compactUtf16[..compactLength].SequenceEqual(hybridUtf16[..hybridLength]))
+                throw new InvalidOperationException($"hybrid short-buffer mismatch at 0x{bits:X8}");
+        }
+        checkedCount++;
+    }
+
+    uint[] edges = [0, 1, 2, 3, 0x3f_ffff, 0x40_0000, 0x7f_fffd, 0x7f_fffe, 0x7f_ffff];
+    for (uint exponent = 0; exponent < 255; exponent++)
+        foreach (uint fraction in edges)
+        {
+            Check((exponent << 23) | fraction);
+            Check(0x8000_0000 | (exponent << 23) | fraction);
+        }
+
+    ulong state = 0x1234_5678_9abc_def0UL;
+    for (int i = 0; i < 2_000_000; i++)
+    {
+        state ^= state >> 12;
+        state ^= state << 25;
+        state ^= state >> 27;
+        Check((uint)(state * 0x2545_f491_4f6c_dd1dUL));
+    }
+    for (int i = 0; i < 100_000; i++)
+    {
+        ulong bits = NextBits(ref state);
+        double value = BitConverter.Int64BitsToDouble(unchecked((long)bits));
+        if (!double.IsFinite(value))
+            continue;
+        ZmijDecimal compact = ZmijCore.ToDecimal(value);
+        var hybrid = HybridCore.ToDecimal(value);
+        if (compact.Significand != hybrid.Significand || compact.Exponent != hybrid.Exponent || compact.IsNegative != hybrid.IsNegative)
+            throw new InvalidOperationException($"hybrid double mismatch at 0x{bits:X16}");
+    }
+    Console.WriteLine($"xjb32 compact canonical comparison: {checkedCount:N0} finite patterns");
+}
 
 void RunTargeted()
 {
