@@ -20,16 +20,15 @@ The shortcut passed the producer sweep and existing cache identity check. Each b
 
 The xjb comparison is in dedicated `XjbSharp` projects. Both always use the direct binary32 cache. The `XJB_DOUBLE_COMPACT` compile flag selects the binary64 cache in `XjbSharp.Compact`; default `XjbSharp` uses a direct binary64 table. Compact xjb reconstructs the Żmij binary64 power and adjusts the low word by one outside exact powers 0..55.
 
-## Size
+## Cached-power data size
 
 | Measure | Żmij compact | Żmij full | xjb direct | xjb compact |
 |---|---:|---:|---:|---:|
 | Binary32 power data | Shared table | Shared table | 616 B | 616 B |
 | Binary64 power data | Shared table | Shared table | 9,872 B | Reuses Żmij compact |
 | Distinct power data used | 830 B | 9,888 B | 10,488 B | 1,446 B shared across DLLs |
-| Profile Release DLL | 22,528 B | 30,208 B | 16,896 B | 7,168 B |
 
-Żmij's power table serves both widths. xjb's two widths use separate tables; compact xjb's 1,446 B is 616 B in its own DLL plus the existing 830 B table in `ZmijSharp.dll`. The xjb DLLs reference `ZmijSharp.dll` for the decimal result type and compact cache, while the Żmij DLLs include formatting code, so the DLL lengths are not like-for-like total application sizes. The PR's shared table also serves bounded precision; none of these numbers is a CoreLib image size.
+Żmij's power table serves both widths. xjb's two widths use separate tables; compact xjb's 1,446 B is 616 B in its own DLL plus the existing 830 B table in `ZmijSharp.dll`. These are raw constants used by each profile, without PE alignment, metadata, IL, or native code. Whole-assembly file lengths were removed from this table because the Żmij DLLs include formatting code while the xjb DLLs depend on `ZmijSharp.dll`. A four-profile build with the same producer-only boundary is needed for a fair code or DLL size comparison. The PR's shared table also serves bounded precision; these counts are not a CoreLib image size.
 
 ## Producer-only ShortRun
 
