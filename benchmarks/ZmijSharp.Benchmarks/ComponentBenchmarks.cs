@@ -20,6 +20,7 @@ internal static class ComponentInputs
             double value = workload switch
             {
                 "Simple" => simple[i % simple.Length],
+                "Integer" => (i & 1) == 0 ? (double)(bits & ((1UL << 53) - 1)) : -(double)(bits & ((1UL << 53) - 1)),
                 "LongSignificand" => BitConverter.Int64BitsToDouble(unchecked((long)
                     (0x4330000000000000UL | (bits & 0x000FFFFFFFFFFFFFUL)))),
                 _ => BitConverter.Int64BitsToDouble(unchecked((long)bits)),

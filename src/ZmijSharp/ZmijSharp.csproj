@@ -17,6 +17,8 @@
     <InternalsVisibleTo Include="ZmijSharp.Tests" />
     <InternalsVisibleTo Include="ZmijSharp.Verify" />
     <InternalsVisibleTo Include="UnroundedScaling.Comparison" />
+    <InternalsVisibleTo Include="XjbSharp" />
+    <InternalsVisibleTo Include="XjbSharp.Compact" />
   </ItemGroup>
   <!-- Cache profiles: see docs/size-and-assembly.md. Default is the compact cache;
        /p:ZmijCache=Full selects the full power table. -->

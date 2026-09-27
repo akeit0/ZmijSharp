@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <AssemblyName>XjbSharp.Compact</AssemblyName>
+    <DefineConstants>$(DefineConstants);XJB_DOUBLE_COMPACT</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/ZmijSharp/ZmijSharp.csproj" />
+    <Compile Include="../XjbSharp/XjbFloatComparison.cs" Link="XjbFloatComparison.cs" />
+    <Compile Include="../XjbSharp/XjbFloatDirectCache.cs" Link="XjbFloatDirectCache.cs" />
+    <Compile Include="../XjbSharp/XjbDoubleComparison.cs" Link="XjbDoubleComparison.cs" />
+    <InternalsVisibleTo Include="ZmijSharp.Benchmarks" />
+    <InternalsVisibleTo Include="ZmijSharp.Verify" />
+  </ItemGroup>
+</Project>

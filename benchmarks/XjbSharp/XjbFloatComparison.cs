@@ -1,6 +1,4 @@
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace ZmijSharp;
 
@@ -12,12 +10,6 @@ internal static class XjbFloatComparison
     private const ulong FractionMask = (1UL << 36) - 1;
 
     internal static ZmijDecimal ToDecimal(float value)
-        => ToDecimal(value, false);
-
-    internal static ZmijDecimal ToDecimalDirect(float value)
-        => ToDecimal(value, true);
-
-    private static ZmijDecimal ToDecimal(float value, bool directCache)
     {
         uint bits = unchecked((uint)BitConverter.SingleToInt32Bits(value));
         uint fraction = bits & 0x7f_ffff;
@@ -36,21 +28,7 @@ internal static class XjbFloatComparison
         Debug.Assert(powerExponent is >= -32 and <= 44);
 
         int h = binaryExponent + ((powerExponent * 1701) >> 9);
-        ulong power;
-        if (directCache)
-            power = XjbFloatDirectCache.Get(powerExponent);
-        else
-        {
-            int block = (powerExponent + 32) >> 4;
-            int anchorExponent = (block << 4) - 32;
-            int residue = powerExponent - anchorExponent;
-            int shift = ((powerExponent * 1701) >> 9) - residue - ((anchorExponent * 1701) >> 9);
-            Debug.Assert(shift is >= 0 and < 64);
-            ulong anchor = Unsafe.Add(ref MemoryMarshal.GetReference(Anchors), block);
-            ulong minor = Minor(residue);
-            ulong productHigh = Math.BigMul(anchor, minor, out ulong productLow);
-            power = shift == 0 ? productLow : (productHigh << (64 - shift)) | (productLow >> shift);
-        }
+        ulong power = XjbFloatDirectCache.Get(powerExponent);
 
         ulong even = (significand + 1) & 1;
         ulong cb = significand << (h + 37);
@@ -77,28 +55,4 @@ internal static class XjbFloatComparison
         return ZmijDecimal.CreateNormalized(digits, decimalExponent, negative);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static ulong Minor(int residue)
-    {
-        ref ulong packed = ref MemoryMarshal.GetReference(PackedMinor);
-        ulong baseWord = Unsafe.Add(ref packed, residue >> 3);
-        uint basePower = (uint)(baseWord >> ((residue & 4) * 8));
-        ulong small = Unsafe.Add(ref packed, 2) >> ((residue & 3) * 8);
-        return (ulong)basePower * (small & 0xff);
-    }
-
-    // Five anchors (40 bytes) and three packed minor words (24 bytes).
-    private static ReadOnlySpan<ulong> Anchors =>
-    [
-        0xcfb11ead453994bbUL, 0xe69594bec44de15cUL,
-        0x8000000000000000UL, 0x8e1bc9bf04000000UL,
-        0x9dc5ada82b70b59eUL,
-    ];
-
-    private static ReadOnlySpan<ulong> PackedMinor =>
-    [
-        1UL | (625UL << 32),
-        390625UL | (244140625UL << 32),
-        1UL | (5UL << 8) | (25UL << 16) | (125UL << 24),
-    ];
 }

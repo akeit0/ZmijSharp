@@ -13,6 +13,7 @@ The work overlaps with [dotnet/runtime#131068](https://github.com/dotnet/runtime
 | [Component benchmarks](docs/component-benchmarks.md) and [size analysis](docs/size-and-assembly.md) | Measurement details behind the proposal |
 | [Optimization notes](docs/optimization-notes.md) | Digit-writer, SIMD, and x64 JIT experiments |
 | [Binary32 xjb and hybrid cache experiment](docs/benchmark-sessions/xjb-float-hybrid-short.md) | Direct `float` cache with compact `double`, plus xjb32 producer comparisons |
+| [Double producer and PR optimization audit](docs/benchmark-sessions/pr-shortcut-xjb64-double-producer.md) | Small-integer shortcut and xjb64 direct/compact cache comparisons at the canonical decimal boundary |
 | [Work plan](docs/plan.md) | Remaining repository tasks, publication steps, and a possible runtime experiment |
 
 The proposal describes **what to show**; the plan records **what to do next**. The [runtime issue #134638](https://github.com/dotnet/runtime/issues/134638) is posted; repository experiments can inform a later update.
@@ -27,6 +28,7 @@ The proposal describes **what to show**; the plan records **what to do next**. T
 | [`tests/ZmijSharp.Tests`](tests/ZmijSharp.Tests) | TUnit behavior and destination-buffer tests |
 | [`tests/ZmijSharp.Verify`](tests/ZmijSharp.Verify) | Runtime differential checks, independent `BigInteger` oracle, and long producer sweeps |
 | [`benchmarks/ZmijSharp.Benchmarks`](benchmarks/ZmijSharp.Benchmarks) | BenchmarkDotNet comparisons on deterministic input corpora |
+| [`benchmarks/XjbSharp`](benchmarks/XjbSharp) | Benchmark-only xjb producer with a direct `float` cache and direct `double` cache; `XjbSharp.Compact` selects the compact `double` cache at build time |
 | [`tools`](tools) | Cache derivation, JIT disassembly, and isolated shortest-producer size checks |
 
 The optimized path covers default formatting, `G/g`, `G0/g0`, and `R/r` (including accepted `R` precision). Explicit `G` precision and other formats delegate to the installed .NET runtime. `TryFormatUtf8` uses invariant formatting; `char` formatting accepts an `IFormatProvider`. `ToDecimal` accepts finite values only. The [work plan](docs/plan.md) states the proposed runtime boundary.
@@ -66,7 +68,7 @@ dotnet run -c Release --project benchmarks/ZmijSharp.Benchmarks -- --job Short
 
 Benchmark methods include runtime, Zmij, comparison-port, and runtime-shim paths. The [component record](docs/component-benchmarks.md) documents the inputs, output contracts, and limits of the measurements used in the proposal.
 
-To build the experimental profile with a direct `float` cache and compact `double` cache, pass `-p:ZmijCache=FloatFull` when building `src/ZmijSharp/ZmijSharp.csproj`. The default uses the compact cache for both types. Run `dotnet run -c Release --project tests/ZmijSharp.Verify -- --producer-only --xjb-float` to check the hybrid and xjb32 comparison producers on deterministic binary32 patterns.
+To build the experimental Żmij profile with a direct `float` cache and compact `double` cache, pass `-p:ZmijCache=FloatFull` when building `src/ZmijSharp/ZmijSharp.csproj`. The default uses the compact cache for both types. The dedicated xjb comparison projects always use the direct `float` cache; `XjbSharp.Compact` defines `XJB_DOUBLE_COMPACT` for its `double` path. Run `dotnet run -c Release --project tests/ZmijSharp.Verify -- --producer-only --xjb-float --xjb-double` to check both xjb producers on deterministic patterns.
 
 ## API example
 
@@ -88,4 +90,4 @@ ZmijDecimal decimalValue = ZmijFormatter.ToDecimal(Math.PI);
 // decimalValue.Significand * 10^decimalValue.Exponent, with IsNegative separately.
 ```
 
-The original work in this repository is [MIT licensed](LICENSE) under Akito Inoue's name. [Third-party notices](THIRD-PARTY-NOTICES.txt) retain the rights and licenses of the projects used as references or sources. Żmij and Zmij.NET were references for the converter; the available history does not establish an exact source-derived portion.
+This repository does not assert a repository-wide license or ownership of adapted code. [Third-party notices](THIRD-PARTY-NOTICES.txt) retain the rights and licenses of projects used as references or sources. Żmij and Zmij.NET were references for the converter; the available history does not establish an exact source-derived portion.

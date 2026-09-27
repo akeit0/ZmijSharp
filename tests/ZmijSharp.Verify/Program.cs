@@ -1,4 +1,6 @@
 extern alias ZmijFloatFull;
+extern alias XjbFull;
+extern alias XjbCompact;
 
 using System.Diagnostics;
 using System.Globalization;
@@ -8,6 +10,10 @@ using ZmijSharp.Verify;
 using UnroundedScaling.Comparison;
 using HybridCore = ZmijFloatFull::ZmijSharp.ZmijCore;
 using HybridFormatter = ZmijFloatFull::ZmijSharp.ZmijFormatter;
+using XjbFloatComparison = XjbFull::ZmijSharp.XjbFloatComparison;
+using XjbCompactFloat = XjbCompact::ZmijSharp.XjbFloatComparison;
+using XjbFullDouble = XjbFull::ZmijSharp.XjbDoubleComparison;
+using XjbCompactDouble = XjbCompact::ZmijSharp.XjbDoubleComparison;
 
 var invariant = CultureInfo.InvariantCulture;
 var formats = new[] { "", "G", "g", "R", "r", "G0", "g0", "R17", "r17" };
@@ -16,12 +22,15 @@ bool producerOnly = Array.Exists(args, value => value == "--producer-only");
 bool unroundedSmoke = Array.Exists(args, value => value == "--unrounded-smoke");
 bool formatMatrix = Array.Exists(args, value => value == "--format-matrix");
 bool xjbFloat = Array.Exists(args, value => value == "--xjb-float");
+bool xjbDouble = Array.Exists(args, value => value == "--xjb-double");
 int unroundedCountArgument = Array.FindIndex(args, value => value == "--unrounded-count");
 int unroundedCount = unroundedCountArgument >= 0 && unroundedCountArgument + 1 < args.Length ? int.Parse(args[unroundedCountArgument + 1], invariant) : 100_000;
 CacheIdentity.Check();
 Console.WriteLine("power cache identity: 618");
 if (xjbFloat)
     RunXjbFloatComparison();
+if (xjbDouble)
+    RunXjbDoubleComparison();
 if (unroundedSmoke)
 {
     RunUnroundedSmoke(unroundedCount);
@@ -93,9 +102,9 @@ void RunXjbFloatComparison()
         ZmijDecimal actual = XjbFloatComparison.ToDecimal(value);
         if (expected != actual)
             throw new InvalidOperationException($"xjb32 mismatch at 0x{bits:X8}: Zmij={expected}, xjb={actual}");
-        ZmijDecimal direct = XjbFloatComparison.ToDecimalDirect(value);
-        if (expected != direct)
-            throw new InvalidOperationException($"xjb32 direct mismatch at 0x{bits:X8}: Zmij={expected}, xjb={direct}");
+        ZmijDecimal compactProfile = XjbCompactFloat.ToDecimal(value);
+        if (expected != compactProfile)
+            throw new InvalidOperationException($"xjb32 compact-profile mismatch at 0x{bits:X8}: Zmij={expected}, xjb={compactProfile}");
         var hybrid = HybridCore.ToDecimal(value);
         if (expected.Significand != hybrid.Significand || expected.Exponent != hybrid.Exponent || expected.IsNegative != hybrid.IsNegative)
             throw new InvalidOperationException($"hybrid Zmij mismatch at 0x{bits:X8}: Zmij={expected}, hybrid={hybrid}");
@@ -146,7 +155,38 @@ void RunXjbFloatComparison()
         if (compact.Significand != hybrid.Significand || compact.Exponent != hybrid.Exponent || compact.IsNegative != hybrid.IsNegative)
             throw new InvalidOperationException($"hybrid double mismatch at 0x{bits:X16}");
     }
-    Console.WriteLine($"xjb32 compact canonical comparison: {checkedCount:N0} finite patterns");
+    Console.WriteLine($"xjb32 direct-cache canonical comparison: {checkedCount:N0} finite patterns");
+}
+
+void RunXjbDoubleComparison()
+{
+    int checkedCount = 0;
+    void Check(ulong bits)
+    {
+        double value = BitConverter.Int64BitsToDouble(unchecked((long)bits));
+        if (!double.IsFinite(value))
+            return;
+        ZmijDecimal expected = ZmijCore.ToDecimal(value);
+        ZmijDecimal actual = XjbFullDouble.ToDecimal(value);
+        if (expected != actual)
+            throw new InvalidOperationException($"xjb64 mismatch at 0x{bits:X16}: Zmij={expected}, xjb={actual}");
+        ZmijDecimal compact = XjbCompactDouble.ToDecimal(value);
+        if (expected != compact)
+            throw new InvalidOperationException($"xjb64 compact mismatch at 0x{bits:X16}: Zmij={expected}, xjb={compact}");
+        checkedCount++;
+    }
+
+    ulong[] edges = [0, 1, 2, 3, (1UL << 51) - 1, 1UL << 51, (1UL << 52) - 3, (1UL << 52) - 2, (1UL << 52) - 1];
+    for (ulong exponent = 0; exponent < 2047; exponent++)
+        foreach (ulong fraction in edges)
+        {
+            Check((exponent << 52) | fraction);
+            Check(0x8000_0000_0000_0000UL | (exponent << 52) | fraction);
+        }
+    ulong state = 0xD0B1_E5A7_C0DE_1234UL;
+    for (int i = 0; i < 2_000_000; i++)
+        Check(NextBits(ref state));
+    Console.WriteLine($"xjb64 full/compact canonical comparison: {checkedCount:N0} finite patterns");
 }
 
 void RunTargeted()

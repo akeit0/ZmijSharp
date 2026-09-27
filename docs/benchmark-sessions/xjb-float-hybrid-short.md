@@ -1,5 +1,7 @@
 # Binary32 xjb and hybrid cache prototype
 
+Historical measurement: the xjb32 compact-cache variant used in this session was removed from the active comparison project. `benchmarks/XjbSharp` now always uses the direct binary32 cache; its separate compact profile changes only the binary64 cache. The numbers below describe the earlier source shape.
+
 Branch `codex/xjb-float-cache-comparison` compares four canonical `float` shortest-decimal producers. The xjb port is adapted from [xjb714/xjb at `80cc895`](https://github.com/xjb714/xjb/tree/80cc89574a8f8457ffbf951afa2fd27c2459bd4a), specifically `xjb_comp_f32_to_dec` and the direct binary32 cache in `bench/xjb/float_to_decimal/xjb32_i.cpp`. Both xjb variants normalize trailing decimal zeros before returning a `ZmijDecimal`, matching the Zmij contract. They are compiled only into the benchmark and verification programs. The [xjb paper](https://doi.org/10.3390/computers15050280) reports native conversion results; the measurements below are this repository's .NET port and workload.
 
 The hybrid profile makes `float` read a direct, exact 128-bit cache for exponents -32 through 44. `double` continues using the existing compact cache. Build the library with `-p:ZmijCache=FloatFull`; the default remains compact for both types. The additional cache consists of 77 entries copied from `Pow10Tables.cs`. Its arithmetic and writer are unchanged. This is relevant to [dotnet/runtime#134701](https://github.com/dotnet/runtime/pull/134701), though these are standalone ZmijSharp results, not a CoreLib build.

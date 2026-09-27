@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>XjbSharp</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/ZmijSharp/ZmijSharp.csproj" />
+    <InternalsVisibleTo Include="ZmijSharp.Benchmarks" />
+    <InternalsVisibleTo Include="ZmijSharp.Verify" />
+  </ItemGroup>
+</Project>
