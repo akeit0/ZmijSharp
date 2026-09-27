@@ -12,6 +12,7 @@
     <ProjectReference Include="../../src/ZmijSharp/ZmijSharp.csproj" />
     <Compile Include="../XjbSharp/XjbFloatComparison.cs" Link="XjbFloatComparison.cs" />
     <Compile Include="../XjbSharp/XjbFloatDirectCache.cs" Link="XjbFloatDirectCache.cs" />
+    <Compile Include="../XjbSharp/XjbFloatH37.cs" Link="XjbFloatH37.cs" />
     <Compile Include="../XjbSharp/XjbDoubleComparison.cs" Link="XjbDoubleComparison.cs" />
     <InternalsVisibleTo Include="ZmijSharp.Benchmarks" />
     <InternalsVisibleTo Include="ZmijSharp.Verify" />

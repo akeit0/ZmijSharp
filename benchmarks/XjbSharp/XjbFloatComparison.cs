@@ -1,10 +1,7 @@
-using System.Diagnostics;
-
 namespace ZmijSharp;
 
-// Experimental port of xjb_comp_f32_to_dec from xjb714/xjb, Apache-2.0.
-// This is a comparison producer, not a public formatting path. The source
-// returns a possibly zero-terminated significand; normalize for our contract.
+// Benchmark-only adaptation of xjb_v2_f32_to_dec at xjb714/xjb 80cc895.
+// See XJB-LICENSE.txt and THIRD-PARTY-NOTICES.txt.
 internal static class XjbFloatComparison
 {
     private const ulong FractionMask = (1UL << 36) - 1;
@@ -20,7 +17,7 @@ internal static class XjbFloatComparison
         if (exponent == 0 && fraction == 0)
             return new ZmijDecimal(0, 0, negative);
 
-        // Match the small-integer shortcut used by the Żmij producer.
+        // Keep the same exact-integer shortcut as the Żmij benchmark path.
         if (exponent != 0)
         {
             int integerShift = 150 - exponent;
@@ -29,39 +26,36 @@ internal static class XjbFloatComparison
                 return ZmijDecimal.CreateNormalized((fraction | (1U << 23)) >> integerShift, 0, negative);
         }
 
-        bool regular = fraction != 0;
-        int binaryExponent = (exponent == 0 ? 1 : exponent) - 150;
+        int q = (exponent == 0 ? 1 : exponent) - 150;
+        if (fraction == 0)
+        {
+            int k = (q * 1233 - 512) >> 12;
+            int h = q + ((-k * 1701 - 1701) >> 9);
+            ulong power = XjbFloatDirectCache.Get(-1 - k);
+            ulong hi = power >> (4 - h);
+            ulong frac = hi & FractionMask;
+            ulong halfUlp = power >> (28 - h);
+            ulong one = (frac * 5 + ((1UL << 34) - 7) + (frac >> 32)) >> 35;
+            if ((halfUlp >> 1) > frac)
+                one = 0;
+            if (q is -119 or 64 or 67)
+                one++;
+            if (halfUlp > FractionMask - frac)
+                one = 10;
+            ulong digits = (hi >> 36) * 10 + one;
+            return ZmijDecimal.CreateNormalized(digits, k, negative);
+        }
+
+        int decimalExponent = (q * 1233) >> 12;
+        int h37 = XjbFloatH37.Get(exponent);
+        ulong powerHigh = XjbFloatDirectCache.Get(-1 - decimalExponent);
         ulong significand = exponent == 0 ? fraction : fraction | (1U << 23);
-        int decimalExponent = (binaryExponent * 315653 - (regular ? 0 : 131237)) >> 20;
-        int powerExponent = -1 - decimalExponent;
-        Debug.Assert(powerExponent is >= -32 and <= 44);
-
-        int h = binaryExponent + ((powerExponent * 1701) >> 9);
-        ulong power = XjbFloatDirectCache.Get(powerExponent);
-
-        ulong even = (significand + 1) & 1;
-        ulong cb = significand << (h + 37);
-        ulong scaled = Math.BigMul(cb, power, out _);
-        ulong fraction36 = scaled & FractionMask;
-        ulong halfUlp = power >> (28 - h);
-        ulong offset = (1UL << 34) - 7 + (fraction36 >> 32);
-        ulong lastDigit = (fraction36 * 5 + offset) >> 35;
-
-        if (regular)
-        {
-            lastDigit = halfUlp + even > fraction36 ? 0 : lastDigit;
-            lastDigit = halfUlp + even > FractionMask - fraction36 ? 10 : lastDigit;
-        }
-        else
-        {
-            lastDigit = (halfUlp >> 1) > fraction36 ? 0 : lastDigit;
-            if (binaryExponent is -119 or 64 or 67)
-                lastDigit++;
-            lastDigit = halfUlp > FractionMask - fraction36 ? 10 : lastDigit;
-        }
-
-        ulong digits = (scaled >> 36) * 10 + lastDigit;
-        return ZmijDecimal.CreateNormalized(digits, decimalExponent, negative);
+        ulong cb = significand << h37;
+        ulong hi64 = Math.BigMul(cb, powerHigh, out _);
+        ulong half = (powerHigh >> (65 - h37)) + ((significand + 1) & 1);
+        ulong shorter = ((hi64 + half) >> 36) * 10;
+        ulong longer = (hi64 * 5 + ((1UL << 34) - 7) + ((hi64 >> 32) & 15)) >> 35;
+        ulong decimalSignificand = ((hi64 - half) >> 36) < ((hi64 + half) >> 36) ? shorter : longer;
+        return ZmijDecimal.CreateNormalized(decimalSignificand, decimalExponent, negative);
     }
-
 }
