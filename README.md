@@ -13,7 +13,7 @@ The work overlaps with [dotnet/runtime#131068](https://github.com/dotnet/runtime
 | [Component benchmarks](docs/component-benchmarks.md) and [size analysis](docs/size-and-assembly.md) | Measurement details behind the proposal |
 | [Optimization notes](docs/optimization-notes.md) | Digit-writer, SIMD, and x64 JIT experiments |
 | [Binary32 xjb and hybrid cache experiment](docs/benchmark-sessions/xjb-float-hybrid-short.md) | Direct `float` cache with compact `double`, plus xjb32 producer comparisons |
-| [Double producer and PR optimization audit](docs/benchmark-sessions/pr-shortcut-xjb64-double-producer.md) | Small-integer shortcut and xjb64 direct/compact cache comparisons at the canonical decimal boundary |
+| [Float and double producer comparison](docs/benchmark-sessions/float-double-producer-comparison.md) | Four cache profiles for both widths at the canonical decimal boundary |
 | [Work plan](docs/plan.md) | Remaining repository tasks, publication steps, and a possible runtime experiment |
 
 The proposal describes **what to show**; the plan records **what to do next**. The [runtime issue #134638](https://github.com/dotnet/runtime/issues/134638) is posted; repository experiments can inform a later update.

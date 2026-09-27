@@ -7,7 +7,6 @@
   <Project Path="benchmarks/ZmijSharp.Benchmarks/ZmijSharp.Benchmarks.csproj" />
   <Project Path="benchmarks/ZmijSharp.Full/ZmijSharp.Full.csproj" />
   <Project Path="benchmarks/ZmijSharp.FloatFull/ZmijSharp.FloatFull.csproj" />
-  <Project Path="benchmarks/ZmijSharp.PreShortcut/ZmijSharp.PreShortcut.csproj" />
   <Project Path="benchmarks/XjbSharp/XjbSharp.csproj" />
   <Project Path="benchmarks/XjbSharp.Compact/XjbSharp.Compact.csproj" />
   <Project Path="tools/ZmijSharp.JitDisasm/ZmijSharp.JitDisasm.csproj" />

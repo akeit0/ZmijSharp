@@ -1,10 +1,12 @@
-extern alias ZmijFloatFull;
+extern alias ZmijFull;
 extern alias XjbFull;
+extern alias XjbCompact;
 
 using BenchmarkDotNet.Attributes;
 using ZmijSharp;
-using HybridCore = ZmijFloatFull::ZmijSharp.ZmijCore;
-using XjbFloatComparison = XjbFull::ZmijSharp.XjbFloatComparison;
+using FullCore = ZmijFull::ZmijSharp.ZmijCore;
+using XjbDirectCore = XjbFull::ZmijSharp.XjbFloatComparison;
+using XjbCompactCore = XjbCompact::ZmijSharp.XjbFloatComparison;
 
 [MemoryDiagnoser]
 public class FloatDecompositionBenchmarks
@@ -30,17 +32,18 @@ public class FloatDecompositionBenchmarks
                 ? simple[i % simple.Length]
                 : BitConverter.Int32BitsToSingle(unchecked((int)bits));
             _values[i] = float.IsFinite(value) && value != 0 ? value : 1.25f;
-            if (ZmijCore.ToDecimal(_values[i]) != XjbFloatComparison.ToDecimal(_values[i]))
-                throw new InvalidOperationException($"xjb32 mismatch at index {i}");
-            var hybrid = HybridCore.ToDecimal(_values[i]);
             var compact = ZmijCore.ToDecimal(_values[i]);
-            if (hybrid.Significand != compact.Significand || hybrid.Exponent != compact.Exponent || hybrid.IsNegative != compact.IsNegative)
-                throw new InvalidOperationException($"hybrid Zmij mismatch at index {i}");
+            var full = FullCore.ToDecimal(_values[i]);
+            var xjbDirect = XjbDirectCore.ToDecimal(_values[i]);
+            var xjbCompact = XjbCompactCore.ToDecimal(_values[i]);
+            if (compact.Significand != full.Significand || compact.Exponent != full.Exponent || compact.IsNegative != full.IsNegative
+                || compact != xjbDirect || compact != xjbCompact)
+                throw new InvalidOperationException($"binary32 producer mismatch at index {i}");
         }
     }
 
     [Benchmark(OperationsPerInvoke = 10_000)]
-    public ulong ZmijCanonical()
+    public ulong ZmijCompact()
     {
         ulong checksum = 0;
         foreach (float value in _values)
@@ -52,24 +55,36 @@ public class FloatDecompositionBenchmarks
     }
 
     [Benchmark(OperationsPerInvoke = 10_000)]
-    public ulong XjbDirectCanonical()
+    public ulong ZmijFull()
     {
         ulong checksum = 0;
         foreach (float value in _values)
         {
-            ZmijDecimal result = XjbFloatComparison.ToDecimal(value);
+            var result = FullCore.ToDecimal(value);
             checksum += result.Significand + (uint)result.Exponent;
         }
         return checksum;
     }
 
     [Benchmark(OperationsPerInvoke = 10_000)]
-    public ulong ZmijFloatFullCanonical()
+    public ulong XjbDirect()
     {
         ulong checksum = 0;
         foreach (float value in _values)
         {
-            var result = HybridCore.ToDecimal(value);
+            ZmijDecimal result = XjbDirectCore.ToDecimal(value);
+            checksum += result.Significand + (uint)result.Exponent;
+        }
+        return checksum;
+    }
+
+    [Benchmark(OperationsPerInvoke = 10_000)]
+    public ulong XjbCompact()
+    {
+        ulong checksum = 0;
+        foreach (float value in _values)
+        {
+            ZmijDecimal result = XjbCompactCore.ToDecimal(value);
             checksum += result.Significand + (uint)result.Exponent;
         }
         return checksum;

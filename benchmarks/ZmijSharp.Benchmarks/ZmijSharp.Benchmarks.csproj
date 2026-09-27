@@ -11,7 +11,6 @@
     <ProjectReference Include="../../src/ZmijSharp/ZmijSharp.csproj" />
     <ProjectReference Include="../ZmijSharp.Full/ZmijSharp.Full.csproj" Aliases="ZmijFull" />
     <ProjectReference Include="../ZmijSharp.FloatFull/ZmijSharp.FloatFull.csproj" Aliases="ZmijFloatFull" />
-    <ProjectReference Include="../ZmijSharp.PreShortcut/ZmijSharp.PreShortcut.csproj" Aliases="ZmijPreShortcut" />
     <ProjectReference Include="../XjbSharp/XjbSharp.csproj" Aliases="XjbFull" />
     <ProjectReference Include="../XjbSharp.Compact/XjbSharp.Compact.csproj" Aliases="XjbCompact" />
     <ProjectReference Include="../../src/ZmijSharp.RuntimeShim/ZmijSharp.RuntimeShim.csproj" />

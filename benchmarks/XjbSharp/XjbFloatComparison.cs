@@ -20,6 +20,15 @@ internal static class XjbFloatComparison
         if (exponent == 0 && fraction == 0)
             return new ZmijDecimal(0, 0, negative);
 
+        // Match the small-integer shortcut used by the Żmij producer.
+        if (exponent != 0)
+        {
+            int integerShift = 150 - exponent;
+            if ((uint)integerShift <= 23U
+                && (fraction & ((1U << integerShift) - 1)) == 0)
+                return ZmijDecimal.CreateNormalized((fraction | (1U << 23)) >> integerShift, 0, negative);
+        }
+
         bool regular = fraction != 0;
         int binaryExponent = (exponent == 0 ? 1 : exponent) - 150;
         ulong significand = exponent == 0 ? fraction : fraction | (1U << 23);

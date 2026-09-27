@@ -30,6 +30,13 @@ internal static partial class ZmijCore
             binExp = 1;
             binSig |= FloatImplicitBit;
         }
+        else
+        {
+            int integerShift = FloatExponentOffset - binExp;
+            if ((uint)integerShift <= FloatSignificandBits
+                && (binSig & ((1U << integerShift) - 1)) == 0)
+                return ZmijDecimal.CreateNormalized((binSig | FloatImplicitBit) >> integerShift, 0, negative);
+        }
 
         int adjustedBinExp = binExp - FloatExponentOffset;
         int decimalExp = ComputeDecimalExponent(adjustedBinExp, binSig != 0);

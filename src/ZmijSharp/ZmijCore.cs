@@ -40,7 +40,6 @@ internal static partial class ZmijCore
             binExp = 1;
             binSig |= DoubleImplicitBit;
         }
-#if !ZMIJ_NO_INTEGER_SHORTCUT
         else
         {
             // Exact integers below 2^53 are already shortest. The PR uses
@@ -50,7 +49,6 @@ internal static partial class ZmijCore
                 && (binSig & ((1UL << integerShift) - 1)) == 0)
                 return ZmijDecimal.CreateNormalized((binSig | DoubleImplicitBit) >> integerShift, 0, negative);
         }
-#endif
 
         int adjustedBinExp = binExp - DoubleExponentOffset;
         int decimalExp = ComputeDecimalExponent(adjustedBinExp, binSig != 0);
